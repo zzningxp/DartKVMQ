@@ -15,21 +15,29 @@ from turboquant.block_cache import (
     BlockKVCache,
     BlockState,
     BlockTable,
+    BlockCacheLayer,
     GroupingPolicy,
     HybridPolicy,
+    NormPageImportanceScorer,
     PageQuantBackend,
+    PageImportanceScorer,
     SKVQPageCompressor,
     TokenBlockPolicy,
+    TopRatioPageBitAllocator,
     WindowBlockPolicy,
     available_page_backends,
     register_page_backend,
 )
+from turboquant.block_cache.backends.turboquant import TurboQuantPageBackend
 from turboquant.block_cache.methods import (
     NIAH_ALL_BACKENDS,
     cache_factory_for_backend,
     parse_backend_selection,
 )
+from turboquant.compressors_v3 import MSECompressor
 from turboquant.block_cache.quantizer import BlockMSECompressor
+from turboquant.lloyd_max import LloydMaxCodebook, get_codebook
+from turboquant.turboquant import get_rotation_matrix
 
 
 def _kv(B: int, H: int, S: int, D: int, dtype=torch.float16) -> tuple[torch.Tensor, torch.Tensor]:
@@ -117,6 +125,125 @@ def test_per_block_compress_decompress_roundtrip():
     print(f"ok: test_per_block_compress_decompress_roundtrip  err={err.item():.4f}")
 
 
+def test_lloyd_max_boundary_quantization_matches_nearest_centroid():
+    values = torch.linspace(-0.5, 0.5, steps=255).reshape(17, 15, 1)
+    for bits in (2, 4, 8):
+        cmp = MSECompressor(head_dim=64, bits=bits, seed=1)
+        fast = cmp.quantize_indices(values)
+        brute = (values.unsqueeze(-1) - cmp.centroids).abs().argmin(dim=-1).to(torch.uint8)
+        assert torch.equal(fast, brute)
+    print("ok: test_lloyd_max_boundary_quantization_matches_nearest_centroid")
+
+
+def test_codebook_and_rotation_are_memoized():
+    direct = LloydMaxCodebook(64, 4)
+    cached = get_codebook(64, 4)
+    cached_again = get_codebook(64, 4)
+    assert cached is cached_again
+    assert torch.allclose(cached.centroids, direct.centroids)
+    values = torch.linspace(-0.5, 0.5, steps=255)
+    assert torch.equal(cached.quantize(values), direct.quantize(values))
+
+    rot = get_rotation_matrix(64, seed=123)
+    rot_again = get_rotation_matrix(64, seed=123)
+    assert rot is rot_again
+    assert torch.allclose(rot @ rot.T, torch.eye(64), atol=1e-5, rtol=1e-5)
+
+    cmp1 = MSECompressor(head_dim=64, bits=4, seed=123)
+    cmp2 = MSECompressor(head_dim=64, bits=4, seed=123)
+    assert cmp1.Pi is cmp2.Pi
+    assert cmp1.centroids.data_ptr() == cmp2.centroids.data_ptr()
+    print("ok: test_codebook_and_rotation_are_memoized")
+
+
+def test_norm_importance_score_many_matches_single_block_scores():
+    table = BlockTable(block_size=4, head_dim=8, n_kv_heads=2, batch_size=1)
+    k, v = _kv(1, 2, 16, 8)
+    blocks = table.append(k, v)
+    scorer = NormPageImportanceScorer("k_norm")
+
+    batched = scorer.score_many(blocks, table, layer_idx=0)
+    single = [scorer.score(block, table, layer_idx=0) for block in blocks]
+
+    assert torch.allclose(torch.tensor(batched), torch.tensor(single), atol=1e-6)
+    print("ok: test_norm_importance_score_many_matches_single_block_scores")
+
+
+class StaticScoreScorer(PageImportanceScorer):
+    name = "static"
+
+    def __init__(self, scores):
+        self.scores = list(scores)
+
+    def score(self, block, table, layer_idx):
+        return float(self.scores[block.block_idx])
+
+    def score_many(self, blocks, table, layer_idx):
+        return [self.score(block, table, layer_idx) for block in blocks]
+
+
+def test_top_ratio_allocator_run_aware_selects_contiguous_segment():
+    table = BlockTable(block_size=4, head_dim=8, n_kv_heads=2, batch_size=1)
+    k, v = _kv(1, 2, 16, 8)
+    blocks = table.append(k, v)
+    scorer = StaticScoreScorer([10.0, 1.0, 9.0, 1.0])
+
+    run_aware = TopRatioPageBitAllocator(
+        scorer=scorer,
+        important_ratio=0.5,
+        high_key_bits=4,
+        high_value_bits=4,
+        low_key_bits=2,
+        low_value_bits=2,
+        run_aware=True,
+    )
+    assignments = run_aware.assign_many(blocks, table, layer_idx=0)
+    high_ids = {
+        block_idx for block_idx, bits in assignments.items() if bits == (4.0, 4.0)
+    }
+    assert high_ids == {0, 1}
+
+    scattered = TopRatioPageBitAllocator(
+        scorer=scorer,
+        important_ratio=0.5,
+        high_key_bits=4,
+        high_value_bits=4,
+        low_key_bits=2,
+        low_value_bits=2,
+        run_aware=False,
+    )
+    assignments = scattered.assign_many(blocks, table, layer_idx=0)
+    high_ids = {
+        block_idx for block_idx, bits in assignments.items() if bits == (4.0, 4.0)
+    }
+    assert high_ids == {0, 2}
+    print("ok: test_top_ratio_allocator_run_aware_selects_contiguous_segment")
+
+
+def test_turboquant_compression_groups_contiguous_bit_runs():
+    table = BlockTable(block_size=4, head_dim=8, n_kv_heads=2, batch_size=1)
+    k, v = _kv(1, 2, 20, 8)
+    blocks = table.append(k, v)
+    prepared = [
+        (blocks[0], 2, 2),
+        (blocks[1], 4, 4),
+        (blocks[2], 4, 4),
+        (blocks[3], 2, 2),
+        (blocks[4], 2, 2),
+    ]
+
+    runs = BlockCacheLayer._contiguous_bit_runs(prepared)
+    assert [
+        (k_bits, v_bits, [blk.block_idx for blk in run])
+        for k_bits, v_bits, run in runs
+    ] == [
+        (2.0, 2.0, [0]),
+        (4.0, 4.0, [1, 2]),
+        (2.0, 2.0, [3, 4]),
+    ]
+    print("ok: test_turboquant_compression_groups_contiguous_bit_runs")
+
+
 def test_block_kv_cache_update_returns_full_history():
     cache = BlockKVCache(BlockCacheConfig(
         block_size=4, key_bits=8, value_bits=8,
@@ -134,6 +261,154 @@ def test_block_kv_cache_update_returns_full_history():
     assert full_k.shape == (1, 2, 11, 8)
     assert cache.get_seq_length(0) == 11
     print("ok: test_block_kv_cache_update_returns_full_history")
+
+
+def test_incremental_materialize_matches_legacy_path():
+    common = dict(
+        block_size=4,
+        key_bits=8,
+        value_bits=8,
+        policy=HybridPolicy(sink_size=4, window_size=4),
+        quant_backend="turboquant",
+    )
+    inc = BlockKVCache(BlockCacheConfig(**common, incremental_materialize=True))
+    legacy = BlockKVCache(BlockCacheConfig(**common, incremental_materialize=False))
+
+    g = torch.Generator().manual_seed(123)
+    for n_new in [3, 3, 2, 1, 4, 1, 1]:
+        k = torch.randn(1, 2, n_new, 8, generator=g).half()
+        v = torch.randn(1, 2, n_new, 8, generator=g).half()
+        inc_k, inc_v = inc.update(k, v, layer_idx=0)
+        legacy_k, legacy_v = legacy.update(k, v, layer_idx=0)
+        assert torch.allclose(inc_k, legacy_k, atol=0, rtol=0)
+        assert torch.allclose(inc_v, legacy_v, atol=0, rtol=0)
+
+    layer = inc.layers[0]
+    assert layer._mat_k is not None
+    same_k, same_v = layer._materialize(dtype=torch.float16)
+    assert same_k is layer._mat_k
+    assert same_v is layer._mat_v
+    print("ok: test_incremental_materialize_matches_legacy_path")
+
+
+def test_turboquant_batched_compression_matches_single_page_path():
+    cfg = BlockCacheConfig(
+        block_size=4,
+        key_bits=8,
+        value_bits=8,
+        policy=TokenBlockPolicy(),
+        quant_backend="turboquant",
+        incremental_materialize=False,
+    )
+    batched = BlockKVCache(cfg)
+    single = BlockKVCache(cfg)
+
+    k, v = _kv(1, 2, 12, 8)
+    batched_k, batched_v = batched.update(k, v, layer_idx=0)
+    single_parts_k = []
+    single_parts_v = []
+    for start in range(0, 12, 4):
+        out_k, out_v = single.update(
+            k[:, :, start : start + 4, :],
+            v[:, :, start : start + 4, :],
+            layer_idx=0,
+        )
+        single_parts_k.append(out_k)
+        single_parts_v.append(out_v)
+
+    assert torch.allclose(batched_k, single_parts_k[-1], atol=0, rtol=0)
+    assert torch.allclose(batched_v, single_parts_v[-1], atol=0, rtol=0)
+    assert all(b.state == BlockState.COMPRESSED for b in batched.layers[0].table.blocks)
+    assert all(b.state == BlockState.COMPRESSED for b in single.layers[0].table.blocks)
+    assert len(batched.layers[0]._tq_compressed_runs) == 1
+    assert all("__run_id" in b.compressed_k for b in batched.layers[0].table.blocks)
+    assert not any(
+        torch.is_tensor(value)
+        for b in batched.layers[0].table.blocks
+        for value in b.compressed_k.values()
+    )
+    print("ok: test_turboquant_batched_compression_matches_single_page_path")
+
+
+def test_turboquant_batched_materialize_matches_blockwise_path():
+    common = dict(
+        block_size=4,
+        key_bits=8,
+        value_bits=8,
+        policy=TokenBlockPolicy(),
+        quant_backend="turboquant",
+        incremental_materialize=False,
+    )
+    batched = BlockKVCache(
+        BlockCacheConfig(**common, max_cached_decompressed_blocks=0)
+    )
+    blockwise = BlockKVCache(
+        BlockCacheConfig(**common, max_cached_decompressed_blocks=1)
+    )
+
+    k, v = _kv(1, 2, 12, 8)
+    batched_k, batched_v = batched.update(k, v, layer_idx=0)
+    blockwise_k, blockwise_v = blockwise.update(k, v, layer_idx=0)
+
+    assert torch.allclose(batched_k, blockwise_k, atol=0, rtol=0)
+    assert torch.allclose(batched_v, blockwise_v, atol=0, rtol=0)
+    assert len(batched.layers[0]._decompressed_cache) == 0
+    assert len(blockwise.layers[0]._decompressed_cache) == 1
+    print("ok: test_turboquant_batched_materialize_matches_blockwise_path")
+
+
+def test_live_fp16_blocks_are_compacted_after_prefill():
+    cache = BlockKVCache(BlockCacheConfig(
+        block_size=4,
+        key_bits=8,
+        value_bits=8,
+        policy=WindowBlockPolicy(window_size=4),
+        quant_backend="turboquant",
+        incremental_materialize=False,
+        max_cached_decompressed_blocks=0,
+    ))
+    k, v = _kv(1, 2, 12, 8)
+    full_k, full_v = cache.update(k, v, layer_idx=0)
+    layer = cache.layers[0]
+    blocks = layer.table.blocks
+
+    assert full_k.shape == (1, 2, 12, 8)
+    assert full_v.shape == (1, 2, 12, 8)
+    assert [blk.state for blk in blocks] == [
+        BlockState.COMPRESSED,
+        BlockState.COMPRESSED,
+        BlockState.SEALED,
+    ]
+    assert all(blk.fp16_k is None for blk in blocks[:2])
+    assert blocks[2].fp16_k.is_contiguous()
+    assert blocks[2].fp16_v.is_contiguous()
+    print("ok: test_live_fp16_blocks_are_compacted_after_prefill")
+
+
+def test_block_table_total_len_tracks_crop_reset_and_restore():
+    cache = BlockKVCache(BlockCacheConfig(
+        block_size=4,
+        key_bits=8,
+        value_bits=8,
+        policy=TokenBlockPolicy(),
+        quant_backend="turboquant",
+    ))
+    k, v = _kv(1, 2, 12, 8)
+    cache.update(k, v, layer_idx=0)
+    layer = cache.layers[0]
+    assert layer.table.total_len == 12
+
+    layer.crop(8)
+    assert layer.table.total_len == 8
+
+    restored = BlockKVCache(cache.config)
+    restored.load_state_dict(cache.state_dict())
+    assert restored.layers[0].table.total_len == 8
+
+    restored.layers[0].reset()
+    assert restored.layers[0].table.total_len == 0
+    print("ok: test_block_table_total_len_tracks_crop_reset_and_restore")
+
 
 
 def test_block_kv_cache_window_policy_memory_drops():
@@ -439,6 +714,81 @@ def test_shared_method_cache_factory():
     print("ok: test_shared_method_cache_factory")
 
 
+def test_paper_pure_mix_protection_defaults_match_page_mix():
+    from turboquant.block_cache.skvq_native_integration import (
+        paper_pure_layer_protection,
+    )
+
+    default_args = SimpleNamespace(
+        protected_layers=0,
+        protected_key_bits=8,
+        protected_value_bits=8,
+    )
+    assert paper_pure_layer_protection("tq_pure_mix", default_args) == (1, 8.0, 8.0)
+
+    explicit_args = SimpleNamespace(
+        protected_layers=1,
+        protected_key_bits=8,
+        protected_value_bits=8,
+    )
+    assert paper_pure_layer_protection("tq_pure_mix", explicit_args) == (1, 8.0, 8.0)
+
+    disabled_args = SimpleNamespace(
+        protected_layers=-1,
+        protected_key_bits=8,
+        protected_value_bits=8,
+    )
+    assert paper_pure_layer_protection("tq_pure_mix", disabled_args) == (0, 8.0, 8.0)
+    assert paper_pure_layer_protection("tq_pure", explicit_args)[0] == 0
+    print("ok: test_paper_pure_mix_protection_defaults_match_page_mix")
+
+
+def test_pure_mix_high_bits_default_to_page_mix_profile():
+    args = SimpleNamespace(
+        policy="hybrid",
+        block_size=4,
+        sink=4,
+        window=8,
+        key_bits=2,
+        value_bits=2,
+        granularity="per-vector",
+        importance_metric="k_norm",
+        important_ratio=0.5,
+        high_key_bits=None,
+        high_value_bits=None,
+        low_key_bits=None,
+        low_value_bits=None,
+        num_layers=2,
+        protected_layers=0,
+        protected_key_bits=8,
+        protected_value_bits=8,
+        group_size=8,
+        key_group_size=None,
+        value_group_size=None,
+        clipping=1.0,
+        reorder_file=None,
+        max_cached_decompressed_blocks=0,
+    )
+
+    pure_mix = cache_factory_for_backend(args, "block_tq_pure_mix")()
+    assert (pure_mix.config.high_key_bits, pure_mix.config.high_value_bits) == (4.0, 4.0)
+    assert (pure_mix.config.low_key_bits, pure_mix.config.low_value_bits) == (2.0, 2.0)
+
+    regular_mix = cache_factory_for_backend(args, "block_tq_mix")()
+    assert (regular_mix.config.high_key_bits, regular_mix.config.high_value_bits) == (
+        4.0,
+        4.0,
+    )
+
+    explicit = SimpleNamespace(**{**vars(args), "high_key_bits": 4, "high_value_bits": 4})
+    explicit_pure_mix = cache_factory_for_backend(explicit, "block_tq_pure_mix")()
+    assert (
+        explicit_pure_mix.config.high_key_bits,
+        explicit_pure_mix.config.high_value_bits,
+    ) == (4.0, 4.0)
+    print("ok: test_pure_mix_high_bits_default_to_page_mix_profile")
+
+
 def test_block_kv_cache_protected_layers_override_bits():
     cache = BlockKVCache(BlockCacheConfig(
         block_size=4,
@@ -674,6 +1024,9 @@ def test_block_kv_cache_state_dict_roundtrip_and_continue():
 
     assert restored.seen_tokens == cache.seen_tokens
     assert restored.memory_report() == before
+    assert len(restored.layers[0]._tq_compressed_runs) == len(
+        cache.layers[0]._tq_compressed_runs
+    )
     assert torch.allclose(restored_k, full_k, atol=0, rtol=0)
     assert torch.allclose(restored_v, full_v, atol=0, rtol=0)
 
@@ -742,7 +1095,17 @@ def main():
     test_hybrid_policy_sink_and_window()
     test_per_vector_compress_decompress_roundtrip()
     test_per_block_compress_decompress_roundtrip()
+    test_lloyd_max_boundary_quantization_matches_nearest_centroid()
+    test_codebook_and_rotation_are_memoized()
+    test_norm_importance_score_many_matches_single_block_scores()
+    test_top_ratio_allocator_run_aware_selects_contiguous_segment()
+    test_turboquant_compression_groups_contiguous_bit_runs()
     test_block_kv_cache_update_returns_full_history()
+    test_incremental_materialize_matches_legacy_path()
+    test_turboquant_batched_compression_matches_single_page_path()
+    test_turboquant_batched_materialize_matches_blockwise_path()
+    test_live_fp16_blocks_are_compacted_after_prefill()
+    test_block_table_total_len_tracks_crop_reset_and_restore()
     test_block_kv_cache_window_policy_memory_drops()
     test_block_kv_cache_per_layer_independence()
     test_reorder_cache_permutes_batch()
@@ -754,6 +1117,8 @@ def main():
     test_block_kv_cache_turboquant_reorder_metadata()
     test_custom_page_backend_registry()
     test_shared_method_cache_factory()
+    test_paper_pure_mix_protection_defaults_match_page_mix()
+    test_pure_mix_high_bits_default_to_page_mix_profile()
     test_block_kv_cache_protected_layers_override_bits()
     test_attention_score_importance_drives_mixed_precision()
     test_attention_score_deferred_pages_compress_after_recording()

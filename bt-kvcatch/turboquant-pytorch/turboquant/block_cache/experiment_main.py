@@ -32,6 +32,7 @@ import torch
 from turboquant.block_cache.eval_niah import _parse_optional_int, build_prompt
 from turboquant.block_cache.methods import (
     MethodSpec,
+    _mix_bits as _shared_mix_bits,
     build_main_methods as _shared_build_main_methods,
     cache_factory_for_method as _shared_cache_factory_for_method,
     method_config as _shared_method_config,
@@ -433,10 +434,12 @@ def _write_outputs(results: list[MainResult], args) -> None:
                     "key_group_size": args.key_group_size,
                     "value_group_size": args.value_group_size,
                     "max_cached_decompressed_blocks": args.max_cached_decompressed_blocks,
+                    "incremental_materialize": args.incremental_materialize,
                     "quant_budget_per_update": args.quant_budget_per_update,
                     "important_ratio": args.important_ratio,
-                    "high_bits": [args.high_key_bits, args.high_value_bits],
-                    "low_bits": [args.low_key_bits, args.low_value_bits],
+                    "high_bits": list(_shared_mix_bits(args)[:2]),
+                    "low_bits": list(_shared_mix_bits(args)[2:]),
+                    "mixed_precision_mode": args.mixed_precision_mode,
                     "num_layers": args.num_layers,
                     "protected_layers": args.protected_layers,
                     "protected_bits": [
@@ -532,6 +535,12 @@ def main() -> None:
     parser.add_argument("--reorder-file", default=None)
     parser.add_argument("--max-cached-decompressed-blocks", type=int, default=0)
     parser.add_argument(
+        "--incremental-materialize",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Cache the dense materialized KV prefix and rebuild only changed suffix blocks.",
+    )
+    parser.add_argument(
         "--quant-budget-per-update",
         type=_parse_optional_int,
         default=None,
@@ -544,6 +553,11 @@ def main() -> None:
     parser.add_argument("--high-value-bits", type=_parse_bits, default=4)
     parser.add_argument("--low-key-bits", type=_parse_bits, default=2)
     parser.add_argument("--low-value-bits", type=_parse_bits, default=2)
+    parser.add_argument(
+        "--mixed-precision-mode",
+        choices=["direct"],
+        default="direct",
+    )
     parser.add_argument("--num-layers", type=int, default=None)
     parser.add_argument("--protected-layers", type=int, default=0)
     parser.add_argument("--protected-key-bits", type=_parse_bits, default=8)

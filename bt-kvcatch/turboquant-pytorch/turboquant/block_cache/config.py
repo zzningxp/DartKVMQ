@@ -20,8 +20,10 @@ class BlockCacheConfig:
     policy: GroupingPolicy = field(default_factory=TokenBlockPolicy)
     quant_backend: str = "turboquant"  # 'turboquant' | 'skvq' | registered backend
     mixed_precision: bool = False
+    mixed_precision_mode: str = "direct"
     importance_metric: str = "k_norm"
     important_ratio: float = 0.2
+    pagemix_run_aware: bool = True
     high_key_bits: float = 4
     high_value_bits: float = 2
     low_key_bits: float = 2
@@ -37,11 +39,14 @@ class BlockCacheConfig:
     reorder_file: Optional[str] = None
     reorder_meta: Optional[dict[str, Any]] = None
     max_cached_decompressed_blocks: int = 0
+    incremental_materialize: bool = False
     # None keeps the original synchronous behavior. An integer enables a
     # budgeted "quant cursor": ready pages are queued and at most this many
     # pages are compressed per cache update / attention feedback call.
     quant_budget_per_update: Optional[int] = None
 
     def __post_init__(self) -> None:
+        if self.mixed_precision_mode != "direct":
+            raise ValueError("mixed_precision_mode must be 'direct'")
         if self.quant_budget_per_update is not None and self.quant_budget_per_update < 0:
             raise ValueError("quant_budget_per_update must be non-negative or None")

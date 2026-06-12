@@ -567,6 +567,12 @@ def main() -> None:
     parser.add_argument("--reorder-file", default=None)
     parser.add_argument("--max-cached-decompressed-blocks", type=int, default=0)
     parser.add_argument(
+        "--incremental-materialize",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Cache the dense materialized KV prefix and rebuild only changed suffix blocks.",
+    )
+    parser.add_argument(
         "--quant-budget-per-update",
         type=_parse_optional_int,
         default=None,
@@ -579,6 +585,11 @@ def main() -> None:
     parser.add_argument("--high-value-bits", type=_parse_bits, default=4)
     parser.add_argument("--low-key-bits", type=_parse_bits, default=2)
     parser.add_argument("--low-value-bits", type=_parse_bits, default=2)
+    parser.add_argument(
+        "--mixed-precision-mode",
+        choices=["direct"],
+        default="direct",
+    )
     parser.add_argument("--num-layers", type=int, default=None)
     parser.add_argument("--protected-layers", type=int, default=0)
     parser.add_argument("--protected-key-bits", type=_parse_bits, default=8)

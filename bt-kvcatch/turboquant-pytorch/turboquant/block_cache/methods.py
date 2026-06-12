@@ -65,6 +65,38 @@ class MethodSpec:
     paper_baseline: str | None = None
 
 
+DEFAULT_MIX_HIGH_KEY_BITS = 4.0
+DEFAULT_MIX_HIGH_VALUE_BITS = 4.0
+DEFAULT_PURE_MIX_HIGH_KEY_BITS = 4.0
+DEFAULT_PURE_MIX_HIGH_VALUE_BITS = 4.0
+DEFAULT_MIX_LOW_KEY_BITS = 2.0
+DEFAULT_MIX_LOW_VALUE_BITS = 2.0
+
+
+def _arg_or_default(args: Any, name: str, default: float) -> float:
+    value = getattr(args, name, None)
+    return float(default if value is None else value)
+
+
+def _mix_bits(args: Any, *, pure_mix: bool = False) -> tuple[float, float, float, float]:
+    high_k_default = (
+        DEFAULT_PURE_MIX_HIGH_KEY_BITS if pure_mix else DEFAULT_MIX_HIGH_KEY_BITS
+    )
+    high_v_default = (
+        DEFAULT_PURE_MIX_HIGH_VALUE_BITS if pure_mix else DEFAULT_MIX_HIGH_VALUE_BITS
+    )
+    return (
+        _arg_or_default(args, "high_key_bits", high_k_default),
+        _arg_or_default(args, "high_value_bits", high_v_default),
+        _arg_or_default(args, "low_key_bits", DEFAULT_MIX_LOW_KEY_BITS),
+        _arg_or_default(args, "low_value_bits", DEFAULT_MIX_LOW_VALUE_BITS),
+    )
+
+
+def _mix_scheme(high_k: float, high_v: float, low_k: float, low_v: float) -> str:
+    return f"Mixed high K{high_k}/V{high_v}, low K{low_k}/V{low_v}"
+
+
 def parse_backend_selection(name: str, *, all_backends: list[str]) -> list[str]:
     if name == "all":
         return list(all_backends)
@@ -101,10 +133,10 @@ def paper_tq_pure_policy():
 def build_main_methods(args: Any) -> list[MethodSpec]:
     """Build the formal comparison method list used by ``experiment_main``."""
     baseline_scheme = f"Uniform K{args.key_bits}/V{args.value_bits}"
-    mix_scheme = (
-        f"Mixed high K{args.high_key_bits}/V{args.high_value_bits}, "
-        f"low K{args.low_key_bits}/V{args.low_value_bits}"
-    )
+    high_k, high_v, low_k, low_v = _mix_bits(args)
+    pure_high_k, pure_high_v, pure_low_k, pure_low_v = _mix_bits(args, pure_mix=True)
+    mix_scheme = _mix_scheme(high_k, high_v, low_k, low_v)
+    pure_mix_scheme = _mix_scheme(pure_high_k, pure_high_v, pure_low_k, pure_low_v)
     methods = [
         MethodSpec(
             name="FP16",
@@ -173,15 +205,15 @@ def build_main_methods(args: Any) -> list[MethodSpec]:
             quant_backend="turboquant",
             policy="hybrid",
             method_group="paper_baseline",
-            page_quant_scheme=mix_scheme,
+            page_quant_scheme=pure_mix_scheme,
             mixed_precision=True,
             importance_metric=args.importance_metric,
             key_bits=args.key_bits,
             value_bits=args.value_bits,
-            high_key_bits=args.high_key_bits,
-            high_value_bits=args.high_value_bits,
-            low_key_bits=args.low_key_bits,
-            low_value_bits=args.low_value_bits,
+            high_key_bits=pure_high_k,
+            high_value_bits=pure_high_v,
+            low_key_bits=pure_low_k,
+            low_value_bits=pure_low_v,
             paper_baseline="tq_pure_mix",
         ),
         MethodSpec(
@@ -215,10 +247,10 @@ def build_main_methods(args: Any) -> list[MethodSpec]:
             importance_metric=args.importance_metric,
             key_bits=args.key_bits,
             value_bits=args.value_bits,
-            high_key_bits=args.high_key_bits,
-            high_value_bits=args.high_value_bits,
-            low_key_bits=args.low_key_bits,
-            low_value_bits=args.low_value_bits,
+            high_key_bits=high_k,
+            high_value_bits=high_v,
+            low_key_bits=low_k,
+            low_value_bits=low_v,
         ),
     ]
     if args.include_random_mix:
@@ -234,10 +266,10 @@ def build_main_methods(args: Any) -> list[MethodSpec]:
                 importance_metric="random",
                 key_bits=args.key_bits,
                 value_bits=args.value_bits,
-                high_key_bits=args.high_key_bits,
-                high_value_bits=args.high_value_bits,
-                low_key_bits=args.low_key_bits,
-                low_value_bits=args.low_value_bits,
+                high_key_bits=high_k,
+                high_value_bits=high_v,
+                low_key_bits=low_k,
+                low_value_bits=low_v,
             )
         )
     return methods
@@ -270,6 +302,7 @@ def _block_backend_config(
         prot_k = args.protected_key_bits
         prot_v = args.protected_value_bits
         clipping = args.clipping
+    high_k, high_v, low_k, low_v = _mix_bits(args, pure_mix=backend == "block_tq_pure_mix")
 
     cfg = BlockCacheConfig(
         block_size=args.block_size,
@@ -279,12 +312,13 @@ def _block_backend_config(
         policy=policy,
         quant_backend=quant_backend,
         mixed_precision=mixed,
+        mixed_precision_mode=getattr(args, "mixed_precision_mode", "direct"),
         importance_metric=args.importance_metric,
         important_ratio=args.important_ratio,
-        high_key_bits=args.high_key_bits,
-        high_value_bits=args.high_value_bits,
-        low_key_bits=args.low_key_bits,
-        low_value_bits=args.low_value_bits,
+        high_key_bits=high_k,
+        high_value_bits=high_v,
+        low_key_bits=low_k,
+        low_value_bits=low_v,
         num_layers=args.num_layers,
         protected_layers=protected_layers,
         protected_key_bits=prot_k,
@@ -295,6 +329,7 @@ def _block_backend_config(
         clipping=clipping,
         reorder_file=reorder_file,
         max_cached_decompressed_blocks=args.max_cached_decompressed_blocks,
+        incremental_materialize=getattr(args, "incremental_materialize", False),
         quant_budget_per_update=getattr(args, "quant_budget_per_update", None),
     )
     paper_baseline = (
@@ -418,6 +453,7 @@ def cache_factory_for_method(args: Any, method: MethodSpec) -> Callable[[], Any]
             policy=policy,
             quant_backend=method.quant_backend,
             mixed_precision=method.mixed_precision,
+            mixed_precision_mode=getattr(args, "mixed_precision_mode", "direct"),
             importance_metric=method.importance_metric,
             important_ratio=args.important_ratio,
             high_key_bits=method.high_key_bits,
@@ -434,6 +470,7 @@ def cache_factory_for_method(args: Any, method: MethodSpec) -> Callable[[], Any]
             clipping=clipping,
             reorder_file=reorder_file,
             max_cached_decompressed_blocks=args.max_cached_decompressed_blocks,
+            incremental_materialize=getattr(args, "incremental_materialize", False),
             quant_budget_per_update=getattr(args, "quant_budget_per_update", None),
         )
         return BlockKVCache(cfg)
@@ -472,6 +509,7 @@ def backend_config(args: Any, backend: str) -> dict[str, Any]:
         mixed = backend == "block_tq_pure_mix"
         paper_tag = "tq_pure_mix" if mixed else "tq_pure"
         prot_layers, prot_k, prot_v = paper_pure_layer_protection(paper_tag, args)
+        high_k, high_v, low_k, low_v = _mix_bits(args, pure_mix=mixed)
         return {
             "policy": "hybrid",
             "block_size": args.block_size,
@@ -480,12 +518,13 @@ def backend_config(args: Any, backend: str) -> dict[str, Any]:
             "key_bits": args.key_bits,
             "value_bits": args.value_bits,
             "mixed": mixed,
+            "mixed_precision_mode": getattr(args, "mixed_precision_mode", "direct") if mixed else None,
             "important_ratio": args.important_ratio if mixed else None,
             "importance_metric": args.importance_metric if mixed else None,
-            "high_key_bits": args.high_key_bits if mixed else None,
-            "high_value_bits": args.high_value_bits if mixed else None,
-            "low_key_bits": args.low_key_bits if mixed else None,
-            "low_value_bits": args.low_value_bits if mixed else None,
+            "high_key_bits": high_k if mixed else None,
+            "high_value_bits": high_v if mixed else None,
+            "low_key_bits": low_k if mixed else None,
+            "low_value_bits": low_v if mixed else None,
             "paper_baseline": paper_tag,
             "reorder": False,
             "protected_layers": prot_layers,
@@ -503,6 +542,7 @@ def backend_config(args: Any, backend: str) -> dict[str, Any]:
             value_bits=args.value_bits,
             reorder_file=args.reorder_file,
         )
+    high_k, high_v, low_k, low_v = _mix_bits(args)
     return {
         "policy": args.policy,
         "block_size": args.block_size,
@@ -511,12 +551,17 @@ def backend_config(args: Any, backend: str) -> dict[str, Any]:
         "key_bits": args.key_bits,
         "value_bits": args.value_bits,
         "mixed": backend.endswith("_mix"),
+        "mixed_precision_mode": (
+            getattr(args, "mixed_precision_mode", "direct")
+            if backend.endswith("_mix")
+            else None
+        ),
         "importance_metric": args.importance_metric,
         "important_ratio": args.important_ratio,
-        "high_key_bits": args.high_key_bits,
-        "high_value_bits": args.high_value_bits,
-        "low_key_bits": args.low_key_bits,
-        "low_value_bits": args.low_value_bits,
+        "high_key_bits": high_k,
+        "high_value_bits": high_v,
+        "low_key_bits": low_k,
+        "low_value_bits": low_v,
         "num_layers": args.num_layers,
         "protected_layers": args.protected_layers,
         "protected_key_bits": args.protected_key_bits,
@@ -525,6 +570,7 @@ def backend_config(args: Any, backend: str) -> dict[str, Any]:
         "key_group_size": args.key_group_size,
         "value_group_size": args.value_group_size,
         "max_cached_decompressed_blocks": args.max_cached_decompressed_blocks,
+        "incremental_materialize": getattr(args, "incremental_materialize", False),
         "quant_budget_per_update": getattr(args, "quant_budget_per_update", None),
         "integration": "turboquant-pytorch/BlockKVCache",
     }
@@ -566,6 +612,11 @@ def method_config(args: Any, method: MethodSpec) -> dict[str, Any]:
             "key_bits": method.key_bits,
             "value_bits": method.value_bits,
             "mixed_precision": method.mixed_precision,
+            "mixed_precision_mode": (
+                getattr(args, "mixed_precision_mode", "direct")
+                if method.mixed_precision
+                else None
+            ),
             "important_ratio": args.important_ratio if method.mixed_precision else None,
             "importance_metric": method.importance_metric if method.mixed_precision else None,
             "high_key_bits": method.high_key_bits if method.mixed_precision else None,
@@ -604,6 +655,11 @@ def method_config(args: Any, method: MethodSpec) -> dict[str, Any]:
         "key_bits": method.key_bits,
         "value_bits": method.value_bits,
         "mixed_precision": method.mixed_precision,
+        "mixed_precision_mode": (
+            getattr(args, "mixed_precision_mode", "direct")
+            if method.mixed_precision
+            else None
+        ),
         "importance_metric": method.importance_metric if method.mixed_precision else None,
         "important_ratio": args.important_ratio if method.mixed_precision else None,
         "high_key_bits": method.high_key_bits if method.mixed_precision else None,
@@ -618,5 +674,6 @@ def method_config(args: Any, method: MethodSpec) -> dict[str, Any]:
         "key_group_size": args.key_group_size,
         "value_group_size": args.value_group_size,
         "max_cached_decompressed_blocks": args.max_cached_decompressed_blocks,
+        "incremental_materialize": getattr(args, "incremental_materialize", False),
         "quant_budget_per_update": getattr(args, "quant_budget_per_update", None),
     }

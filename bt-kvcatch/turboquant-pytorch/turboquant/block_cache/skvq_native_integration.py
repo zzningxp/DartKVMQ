@@ -27,11 +27,20 @@ def paper_pure_layer_protection(
     paper_baseline: str | None,
     args: Any,
 ) -> tuple[int, float, float]:
-    """``tq_pure`` has no layer protect; ``tq_pure_mix`` matches main PageMix (layer 0 @ 8bit)."""
+    """Resolve paper-style protected-layer settings for pure block baselines."""
     if paper_baseline == "tq_pure_mix":
-        layers = int(getattr(args, "protected_layers", 0))
-        if layers <= 0:
-            layers = PAPER_MIX_PROTECTED_LAYERS
+        layers_arg = int(getattr(args, "protected_layers", 0))
+        if layers_arg < 0:
+            return 0, float(PAPER_MIX_PROTECTED_KEY_BITS), float(
+                PAPER_MIX_PROTECTED_VALUE_BITS
+            )
+        if layers_arg == 0:
+            return (
+                PAPER_MIX_PROTECTED_LAYERS,
+                float(PAPER_MIX_PROTECTED_KEY_BITS),
+                float(PAPER_MIX_PROTECTED_VALUE_BITS),
+            )
+        layers = layers_arg
         key_bits = getattr(args, "protected_key_bits", PAPER_MIX_PROTECTED_KEY_BITS)
         value_bits = getattr(args, "protected_value_bits", PAPER_MIX_PROTECTED_VALUE_BITS)
         return layers, float(key_bits), float(value_bits)

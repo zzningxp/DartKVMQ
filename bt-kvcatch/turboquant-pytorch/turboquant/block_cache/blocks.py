@@ -16,6 +16,16 @@ from enum import Enum
 from typing import Optional
 
 
+def _payload_memory_bytes(value) -> int:
+    if torch.is_tensor(value):
+        return value.numel() * value.element_size()
+    if isinstance(value, dict):
+        return sum(_payload_memory_bytes(v) for v in value.values())
+    if isinstance(value, (list, tuple)):
+        return sum(_payload_memory_bytes(v) for v in value)
+    return 0
+
+
 class BlockState(Enum):
     FILLING = "filling"        # accepting new tokens, FP16
     SEALED = "sealed"          # full, FP16, awaiting policy decision
@@ -44,6 +54,8 @@ class KVBlock:
     fp16_v: Optional[torch.Tensor] = None
     compressed_k: Optional[dict] = None
     compressed_v: Optional[dict] = None
+    compressed_run_id: Optional[int] = None
+    compressed_run_start: int = 0
 
     importance: float = 0.0  # page-level score used by mixed precision
     key_bits: Optional[float] = None
@@ -94,6 +106,8 @@ class KVBlock:
             )
         self.compressed_k = compressed_k
         self.compressed_v = compressed_v
+        self.compressed_run_id = compressed_k.get("__run_id")
+        self.compressed_run_start = int(compressed_k.get("__run_start", 0))
         self.fp16_k = None
         self.fp16_v = None
         self.state = BlockState.COMPRESSED
@@ -111,9 +125,7 @@ class KVBlock:
         for d in (self.compressed_k, self.compressed_v):
             if d is None:
                 continue
-            for val in d.values():
-                if torch.is_tensor(val):
-                    n += val.numel() * val.element_size()
+            n += _payload_memory_bytes(d)
         return n
 
 
@@ -132,10 +144,11 @@ class BlockTable:
         self.n_kv_heads = n_kv_heads
         self.batch_size = batch_size
         self.blocks: list[KVBlock] = []
+        self._total_len = 0
 
     @property
     def total_len(self) -> int:
-        return sum(b.current_len for b in self.blocks)
+        return self._total_len
 
     def _new_block(self) -> KVBlock:
         blk = KVBlock(
@@ -153,6 +166,7 @@ class BlockTable:
     ) -> list[KVBlock]:
         """Append (B, H, n, D). Returns blocks newly SEALED by this call."""
         sealed: list[KVBlock] = []
+        n_appended = int(k.shape[2])
         cur: Optional[KVBlock] = (
             self.blocks[-1]
             if self.blocks and self.blocks[-1].state == BlockState.FILLING
@@ -167,6 +181,7 @@ class BlockTable:
             if cur.state == BlockState.SEALED:
                 sealed.append(cur)
                 cur = None
+        self._total_len += n_appended
         return sealed
 
     def memory_bytes(self) -> int:

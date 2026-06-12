@@ -30,6 +30,7 @@ import torch
 from turboquant.block_cache import BlockKVCache
 from turboquant.block_cache.methods import (
     NIAH_ALL_BACKENDS,
+    _mix_bits,
     build_policy as _shared_build_policy,
     cache_factory_for_backend,
     parse_backend_selection,
@@ -293,6 +294,9 @@ def run_case(model, tokenizer, args, backend: str, context_length: int, position
     found = expected.lower() in response.lower()
     report = cache.memory_report() if cache is not None else None
 
+    high_k, high_v, low_k, low_v = _mix_bits(
+        args, pure_mix=backend == "block_tq_pure_mix"
+    )
     return NIAHResult(
         backend=backend,
         model=args.model,
@@ -318,12 +322,13 @@ def run_case(model, tokenizer, args, backend: str, context_length: int, position
             "key_bits": args.key_bits,
             "value_bits": args.value_bits,
             "mixed": backend.endswith("_mix"),
+            "mixed_precision_mode": args.mixed_precision_mode if backend.endswith("_mix") else None,
             "importance_metric": args.importance_metric,
             "important_ratio": args.important_ratio,
-            "high_key_bits": args.high_key_bits,
-            "high_value_bits": args.high_value_bits,
-            "low_key_bits": args.low_key_bits,
-            "low_value_bits": args.low_value_bits,
+            "high_key_bits": high_k,
+            "high_value_bits": high_v,
+            "low_key_bits": low_k,
+            "low_value_bits": low_v,
             "num_layers": args.num_layers,
             "protected_layers": args.protected_layers,
             "protected_key_bits": args.protected_key_bits,
@@ -332,6 +337,7 @@ def run_case(model, tokenizer, args, backend: str, context_length: int, position
             "key_group_size": args.key_group_size,
             "value_group_size": args.value_group_size,
             "max_cached_decompressed_blocks": args.max_cached_decompressed_blocks,
+            "incremental_materialize": args.incremental_materialize,
             "quant_budget_per_update": args.quant_budget_per_update,
             "attention_feedback": _needs_attention_feedback(args, cache),
         },
@@ -446,6 +452,12 @@ def main() -> None:
     parser.add_argument("--reorder-file", default=None)
     parser.add_argument("--max-cached-decompressed-blocks", type=int, default=0)
     parser.add_argument(
+        "--incremental-materialize",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Cache the dense materialized KV prefix and rebuild only changed suffix blocks.",
+    )
+    parser.add_argument(
         "--quant-budget-per-update",
         type=_parse_optional_int,
         default=None,
@@ -461,6 +473,11 @@ def main() -> None:
     parser.add_argument("--high-value-bits", type=_parse_bits, default=4)
     parser.add_argument("--low-key-bits", type=_parse_bits, default=2)
     parser.add_argument("--low-value-bits", type=_parse_bits, default=2)
+    parser.add_argument(
+        "--mixed-precision-mode",
+        choices=["direct"],
+        default="direct",
+    )
     parser.add_argument("--num-layers", type=int, default=None)
     parser.add_argument("--protected-layers", type=int, default=0)
     parser.add_argument("--protected-key-bits", type=_parse_bits, default=8)

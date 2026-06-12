@@ -29,6 +29,7 @@ from turboquant.block_cache.eval_niah import (
     _selected_backends,
     build_prompt,
 )
+from turboquant.block_cache.methods import _mix_bits
 
 
 @dataclass
@@ -119,6 +120,9 @@ def profile_backend(model, tokenizer, args, backend: str) -> ProfileResult:
         peak_reserved = int(torch.cuda.max_memory_reserved())
 
     output_tokens = int(new_tokens.shape[0])
+    high_k, high_v, low_k, low_v = _mix_bits(
+        args, pure_mix=backend == "block_tq_pure_mix"
+    )
     return ProfileResult(
         backend=backend,
         model=args.model,
@@ -148,12 +152,13 @@ def profile_backend(model, tokenizer, args, backend: str) -> ProfileResult:
             "value_bits": args.value_bits,
             "granularity": args.granularity,
             "mixed": backend.endswith("_mix"),
+            "mixed_precision_mode": args.mixed_precision_mode if backend.endswith("_mix") else None,
             "importance_metric": args.importance_metric,
             "important_ratio": args.important_ratio,
-            "high_key_bits": args.high_key_bits,
-            "high_value_bits": args.high_value_bits,
-            "low_key_bits": args.low_key_bits,
-            "low_value_bits": args.low_value_bits,
+            "high_key_bits": high_k,
+            "high_value_bits": high_v,
+            "low_key_bits": low_k,
+            "low_value_bits": low_v,
             "group_size": args.group_size,
             "key_group_size": args.key_group_size,
             "value_group_size": args.value_group_size,
@@ -161,6 +166,7 @@ def profile_backend(model, tokenizer, args, backend: str) -> ProfileResult:
             "protected_key_bits": args.protected_key_bits,
             "protected_value_bits": args.protected_value_bits,
             "max_cached_decompressed_blocks": args.max_cached_decompressed_blocks,
+            "incremental_materialize": args.incremental_materialize,
             "quant_budget_per_update": args.quant_budget_per_update,
         },
     )
@@ -273,6 +279,12 @@ def main() -> None:
     parser.add_argument("--reorder-file", default=None)
     parser.add_argument("--max-cached-decompressed-blocks", type=int, default=0)
     parser.add_argument(
+        "--incremental-materialize",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Cache the dense materialized KV prefix and rebuild only changed suffix blocks.",
+    )
+    parser.add_argument(
         "--quant-budget-per-update",
         type=_parse_optional_int,
         default=None,
@@ -285,6 +297,11 @@ def main() -> None:
     parser.add_argument("--high-value-bits", type=_parse_bits, default=4)
     parser.add_argument("--low-key-bits", type=_parse_bits, default=2)
     parser.add_argument("--low-value-bits", type=_parse_bits, default=2)
+    parser.add_argument(
+        "--mixed-precision-mode",
+        choices=["direct"],
+        default="direct",
+    )
     parser.add_argument("--num-layers", type=int, default=None)
     parser.add_argument("--protected-layers", type=int, default=0)
     parser.add_argument("--protected-key-bits", type=_parse_bits, default=8)
