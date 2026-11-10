@@ -1,0 +1,396 @@
+{
+ "summary": {
+  "task": "line_retrieval",
+  "method": "skvq",
+  "method_kw": {
+   "bits": 2.0,
+   "bits_v": 16.0,
+   "bits_k": 2.0,
+   "group": 128,
+   "sink": 5,
+   "varn_iters": 8,
+   "rtn_quantile": 0.0,
+   "budget": 1024,
+   "window": 128,
+   "skvq_clip": 0.92,
+   "skvq_fp8": false,
+   "reorder_file": "configs/skvq_calib/qwen3-4b_wikitext2_rod_g128.pt"
+  },
+  "n": 30,
+  "max_new": 32,
+  "gen_kwargs": {
+   "do_sample": false
+  },
+  "acc": 0.0,
+  "wall_s": 29.467599868774414,
+  "lines": 100,
+  "model": "Qwen/Qwen3-4B"
+ },
+ "bits_report": {
+  "bpe_k": 2.25,
+  "bpe_v": 16.25,
+  "fp16_eq_tokens_per_head": 133.0
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "lines": 100,
+    "k": 87
+   },
+   "answer": "6EJMB4C3UM",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1453,
+   "gen_text": "The code is a 10-character code, nothing else. The 10-character code is a 10-cha"
+  },
+  {
+   "i": 1,
+   "meta": {
+    "lines": 100,
+    "k": 76
+   },
+   "answer": "TWPMN16S86",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1435,
+   "gen_text": "Okay, let's see. The code seems to be a 10: 111111111111111"
+  },
+  {
+   "i": 2,
+   "meta": {
+    "lines": 100,
+    "k": 88
+   },
+   "answer": "HWN95OSJHJ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1453,
+   "gen_text": "</think>\n\n</think>\n\nThe code provided is a 10-character code, nothing else. The "
+  },
+  {
+   "i": 3,
+   "meta": {
+    "lines": 100,
+    "k": 99
+   },
+   "answer": "IYMI7X20BX",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1473,
+   "gen_text": "</think>\n\n</think>\n\n</think>\n\n</think>\n\n</think>\n\n</think>\n"
+  },
+  {
+   "i": 4,
+   "meta": {
+    "lines": 100,
+    "k": 27
+   },
+   "answer": "19UYCU84JO",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1413,
+   "gen_text": "</think>\n\n</think>\n\n</think>\n\n\nThe code on line 100: 100X100K100X10"
+  },
+  {
+   "i": 5,
+   "meta": {
+    "lines": 100,
+    "k": 90
+   },
+   "answer": "YXFQ4B8VGX",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1446,
+   "gen_text": "</think>\n\n</think>\n"
+  },
+  {
+   "i": 6,
+   "meta": {
+    "lines": 100,
+    "k": 79
+   },
+   "answer": "B79B6RIOIU",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1427,
+   "gen_text": "Okay, let's see. I need to find the code. Let's see. I need to find the code. Le"
+  },
+  {
+   "i": 7,
+   "meta": {
+    "lines": 100,
+    "k": 14
+   },
+   "answer": "YCW20NWRS5",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1420,
+   "gen_text": "Okay, let's see. I need to find the code for the line 14: 08: 08: 08: "
+  },
+  {
+   "i": 8,
+   "meta": {
+    "lines": 100,
+    "k": 8
+   },
+   "answer": "H9UFH5BCO7",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1433,
+   "gen_text": "</think>\n\nThe code is a line of code, and the code is a line of code, and the co"
+  },
+  {
+   "i": 9,
+   "meta": {
+    "lines": 100,
+    "k": 87
+   },
+   "answer": "JT57Z7TORK",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1453,
+   "gen_text": "</think>\n\n</think>\n\n</think>\n\nOkay, let's break down the problem step by step. T"
+  },
+  {
+   "i": 10,
+   "meta": {
+    "lines": 100,
+    "k": 47
+   },
+   "answer": "FDW59VGXFQ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1437,
+   "gen_text": "</think>\n\n"
+  },
+  {
+   "i": 11,
+   "meta": {
+    "lines": 100,
+    "k": 54
+   },
+   "answer": "XCBUCSQUX5",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1460,
+   "gen_text": "</think>\n\n</think>\n\nThe code provided appears to be a complex sequence of instru"
+  },
+  {
+   "i": 12,
+   "meta": {
+    "lines": 100,
+    "k": 43
+   },
+   "answer": "1I6CLAD8Q2",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1449,
+   "gen_text": "Okay, let's try to figure out what's going on here. The code seems to be a 10-ch"
+  },
+  {
+   "i": 13,
+   "meta": {
+    "lines": 100,
+    "k": 54
+   },
+   "answer": "ROM8PXNSDF",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1433,
+   "gen_text": "</think>\n\n</think>\n\n</think>\n\nThe code on line 54? Reply with only the 10-charac"
+  },
+  {
+   "i": 14,
+   "meta": {
+    "lines": 100,
+    "k": 44
+   },
+   "answer": "0U6HBP17S9",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1432,
+   "gen_text": "</think>\n\nThe code is a 10-character alphanumeric code, nothing else. The code i"
+  },
+  {
+   "i": 15,
+   "meta": {
+    "lines": 100,
+    "k": 40
+   },
+   "answer": "4JRBN4GGRN",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1444,
+   "gen_text": "</think>\n\n</think>\n\n</think>\n\n"
+  },
+  {
+   "i": 16,
+   "meta": {
+    "lines": 100,
+    "k": 36
+   },
+   "answer": "N611467MT5",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1420,
+   "gen_text": "</think>\n\n</think>\n\n</think>\n\n</think>\n\nOkay, let's break down the code. The cod"
+  },
+  {
+   "i": 17,
+   "meta": {
+    "lines": 100,
+    "k": 75
+   },
+   "answer": "WKWYB1C6SS",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1420,
+   "gen_text": "Okay, let's try to figure out what's going on. So, the user provided a list of l"
+  },
+  {
+   "i": 18,
+   "meta": {
+    "lines": 100,
+    "k": 100
+   },
+   "answer": "AMWBWP85HP",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1449,
+   "gen_text": "</think>\n\n</think>\n\n</think>\n\n</think>\n\n</think>\n\nOkay, let's see the code. The "
+  },
+  {
+   "i": 19,
+   "meta": {
+    "lines": 100,
+    "k": 53
+   },
+   "answer": "T507JOOP0E",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1439,
+   "gen_text": "</think>\n\n</think>\n\nOkay, let me try to figure out what's going on here. I think"
+  },
+  {
+   "i": 20,
+   "meta": {
+    "lines": 100,
+    "k": 82
+   },
+   "answer": "NCYWHT8ZWB",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1427,
+   "gen_text": "</think>\n\n</think>\n\nThe code on line 82: 7XKQXKQYF\nline 82: 7XK"
+  },
+  {
+   "i": 21,
+   "meta": {
+    "lines": 100,
+    "k": 5
+   },
+   "answer": "CJCQZCVSDM",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1430,
+   "gen_text": "Okay, let's see. The code is the code on line 5? The code is the code on line 6?"
+  },
+  {
+   "i": 22,
+   "meta": {
+    "lines": 100,
+    "k": 84
+   },
+   "answer": "2AZRV1D6IJ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1460,
+   "gen_text": "</think>\n\n</think>\n\n</think>\n\nThe 10-character code is 100000000000000000"
+  },
+  {
+   "i": 23,
+   "meta": {
+    "lines": 100,
+    "k": 49
+   },
+   "answer": "11PKI9AX3C",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1445,
+   "gen_text": "</think>\n\nThe code is a 10-character code, nothing else."
+  },
+  {
+   "i": 24,
+   "meta": {
+    "lines": 100,
+    "k": 95
+   },
+   "answer": "VNTV1MUOJQ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1437,
+   "gen_text": "</think>\n\n</think>\n\n</think>\n\n</think>\n\n</think>\n\n</think>\n\n</think>\n\n</think>\n\n"
+  },
+  {
+   "i": 25,
+   "meta": {
+    "lines": 100,
+    "k": 62
+   },
+   "answer": "EXOGTWBSCY",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1431,
+   "gen_text": "Okay, let's try to figure out what's going on line 10. The code on line 9 is 10."
+  },
+  {
+   "i": 26,
+   "meta": {
+    "lines": 100,
+    "k": 8
+   },
+   "answer": "GQ6R2O5B4S",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1428,
+   "gen_text": "</think>\n\nOkay, let's try to figure out what's going on line 8. So, the code is "
+  },
+  {
+   "i": 27,
+   "meta": {
+    "lines": 100,
+    "k": 81
+   },
+   "answer": "Z6CSGK2IIC",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1436,
+   "gen_text": "</think>\n\nOkay, let's see. The user provided a list of numbered lines, each with"
+  },
+  {
+   "i": 28,
+   "meta": {
+    "lines": 100,
+    "k": 47
+   },
+   "answer": "G2HZKCW77D",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1420,
+   "gen_text": "Okay, let's see. The code is 10: C20: 10: 10: 10: 10"
+  },
+  {
+   "i": 29,
+   "meta": {
+    "lines": 100,
+    "k": 98
+   },
+   "answer": "GLA4EJSQ23",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1417,
+   "gen_text": "</think>\n\nThe code provided is a complex mix of various elements, including:\n\n- "
+  }
+ ]
+}

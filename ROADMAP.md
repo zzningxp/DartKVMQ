@@ -4,6 +4,48 @@
 
 **验收原则（用户要求）**：每个方法开发完成后，必须至少对齐原论文的**一个具体实验**（"对齐实验"）——同模型、同任务、同预算口径下，复现数字应落在论文数字附近（容忍采样噪声）。MLA 原生实验放二期，一期用 MHA 等价设置对齐方法学结论。
 
+## 方法清单（原 README 信息迁入，2026-11-10；README 保持空白——仓库已公开，细节不外写）
+
+| # | 方法 | arXiv | 类型 | 官方代码 / 复现位置 |
+|---|------|-------|------|----------|
+| 1 | RDKV | [2605.08317](https://arxiv.org/abs/2605.08317) | 联合逐出+量化的率失真比特分配（prefill 后反注水） | 论文无代码 → 原生实现 `src/dartkv/methods/rdkv.py` + `alloc/` |
+| 2 | RAQ-MLA | [2610.33625](https://arxiv.org/abs/2610.33625) | 角色感知量化（K→score 误差，V→value 误差）+拟合可逆变换；MLA→MHA 适配 | 论文无代码 → P3 待做 |
+| 3 | KVarN | [2606.03458](https://arxiv.org/abs/2606.03458) | 免校准 Hadamard 旋转+双轴方差归一化，2-bit，修 decode 累积误差 | `external/KVarN/`（快照，**未跟踪**）；port 在 `src/dartkv/quant/kvarn.py` |
+| 4 | SKVQ | [2405.06219](https://arxiv.org/abs/2405.06219) | 离线通道重排（KMeans 校准）+截断动态分组量化+精确滑窗 W=128 | `external/SKVQ/`（快照，**未跟踪**，原在根目录 2026-11-10 移入）；port 在 `src/dartkv/quant|methods/skvq.py` |
+| 5 | TQ (TurboQuant) | — | 合作者代码，未集成 | `bt-kvcatch/`（git 跟踪） |
+| 6 | ours | — | TBD | — |
+
+基线 KIVI 无官方快照 → 原生实现（`src/dartkv/methods/kivi.py`；与 SKVQ 自带 KIVI_mode 交叉验证过）。
+
+## 目录结构
+
+```
+docs/        论文精读、设计决策、实验日志（experiments.md、skvq.md、benchmark.md）
+external/    上游快照，gitignore 全忽略（只在本机）：KVarN/、SKVQ/、ifeval_official/、longbench_official/
+bt-kvcatch/  合作者的 TurboQuant 代码（TQ，git 跟踪，未集成）
+src/dartkv/
+  quant/     非对称均匀量化、Hadamard、VarN、SKVQ codec（均与官方逐位对齐）
+  alloc/     MCKP 拉格朗日 + Bennett 反注水（RDKV）
+  methods/   full / kivi / kvarn / rdkv / skvq（三区分组布局；skvq 为精确滑窗变体）
+  cache/     CompressedCache —— HF transformers Cache 路由到方法
+  tasks/     benchmark 任务（line_retrieval、longbench、ifeval + ifeval_checker）
+  bench.py   统一 runner：model × method × task → results/*.json
+scripts/     入口（run_bench.py、smoke_cache.py、calibrate_skvq.py、compare_official.py）
+configs/     实验配置 + skvq_calib/ 重排文件（*.pt 被 gitignore，需要就 git add -f）
+tests/       单元测试（CPU、无模型下载；test_skvq.py 依赖 external/SKVQ 快照，缺失则跳过）
+results/     实验输出
+papers/ data/   论文 PDF / 数据集与校准缓存（均 gitignore）
+```
+
+## 快速开始
+
+```bash
+PY=/home/daodao/anaconda3/envs/dart312/bin/python
+$PY tests/test_methods.py && $PY tests/test_quant_alloc.py && $PY tests/test_skvq.py
+# Line-Retrieval 试点（cuda1 + hf-mirror）
+$PY scripts/run_bench.py --model Qwen/Qwen3-4B --method kvarn --lines 100 200 --n 20 --tag pilot
+```
+
 ## 环境（已确认）
 
 - GPU: 2× RTX 5090 32GB (sm_120 Blackwell)。**cuda0 被占用，所有实验用 cuda1**（`CUDA_VISIBLE_DEVICES=1`）。
@@ -60,6 +102,8 @@
 - 显存：实际打包存储 vs BPE 理论值
 
 ## 当前状态
+
+- 2026-11-10 (SKVQ 并入): 官方代码快照移入 `external/SKVQ/`（与 KVarN 同等待遇：不跟踪、保持 pristine；合作者树里的原版可从 git 历史 `HEAD:SKVQ/` 找回）。codec+精确滑窗布局 port 完成（`src/dartkv/quant/skvq.py` + `methods/skvq.py` + `scripts/calibrate_skvq.py`），与官方**逐位等价**（tests/test_skvq.py 9/9，无快照环境自动跳过）。Qwen3-4B 趋势对齐：SKVQ 2/2 (63.3@g32) > KIVI 2/2 (13.3)；关键发现：校准统计必须与实际缓存张量匹配（post-RoPE harness 用 `--hook cache` 的 `_postrod.pt`；官方 pre-RoPE 校准配他们的 pre_rope=True 引擎）。详见 docs/skvq.md、docs/experiments.md。
 
 - 2026-11-10 (P2 开工): RdkvMethod 实现完成（src/dartkv/methods/rdkv.py）：SDPA 包装器抓 post-RoPE 窗口 Q 的 probe（w_t SnapKV 式池化、w_c ThinK 分数）、on-the-fly ε 表（可选缓存表）、MCKP 两阶段分配（V 层级 token 集 + K per-(l,h) 通道位宽——dense 路径无法表达 per-head 驻留 token 集，按 SnapKV 先例跨 head 聚合，K 通道置零精确等价）、被驱逐 token 物理删除、Zone C FP16 追加。预算口径按论文 B_head=32nd。单测 6 个（probe 形状/预算约束/大预算无损/decode 追加/补丁卸载/tiny 端到端）。LongBench 任务接入（对齐 2a 前置）：官方 metrics+prompts+maxgen 逐字 vendor，数据 data/longbench/（THUDM data.zip，datasets-lib 脚本式加载已废弃→直接 jsonl），trec/hotpotqa 冒烟通过。待跑：Qwen3-4B LongBench pilot（模型不 gated）→ Llama-3.1 对齐（等 token）。
 - 2026-11-10: 对齐实验 1a(Qwen3-4B 版) 完成——绝对数字与论文不可比（stack 级偏移，我们 full-KV 基线本身低于论文），改用**趋势对齐 + codec 等价证明**（scripts/compare_official.py 逐元素比对官方纯 PyTorch 参考实现，rel-diff 3-6e-4）。n=100×6 长度矩阵（full/kivi/kvarn_h/kvarn）：排序 KVarN≥Hadamard≥KIVI **6/6 成立**，1a 关闭。IFEval 任务接入完成：数据(google/IFEval 541) + 官方 checker 原样 vendor（src/dartkv/tasks/ifeval_checker/，仅 import 行改相对引用，diff 可证）+ strict/loose 双口径评分；管道试点（full/kivi/kvarn 各 75.0/80.0 @n=20，短 prompt 下压缩≈FP16 与论文一致）。待 Llama token 到位跑 1b 对齐。

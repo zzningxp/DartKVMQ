@@ -16,6 +16,63 @@ Alignment targets live in `docs/papers/*.md` and `ROADMAP.md` phases.
 
 ---
 
+### 2026-11-10 SKVQ integration + alignment (对齐实验 SKVQ, Qwen3-4B)
+- Goal: port official SKVQ (arXiv 2405.06219, code in `external/SKVQ/`,
+  untracked snapshot) into the bench
+  (codec + exact sliding-window layout), prove equivalence, reproduce the
+  paper's method-vs-KIVI direction and ablations.
+- Equivalence proofs (`tests/test_skvq.py`, CPU, imports official code):
+  - codec: our `quant/skvq.py` vs official `KV_process.quant_pytorch` —
+    fp32 allclose, **bf16 bitwise-equal**; covers {no-reorder, reorder +
+    variable KMeans clusters, fp8 e4m3 scales, 1.5-bit V}.
+  - layout: our `SkvqMethod` vs official `SlidingKVCacheManager` driven
+    through prefill + every decode step — **caches identical at every
+    step** (plain & reorder). Sliding window is exact-W (evict-one-at-a-
+    time), not the KIVI/KVarn sawtooth.
+- Config (all runs): Qwen3-4B, L=100, n=30, greedy, bf16+SDPA, chat
+  template, task seed 20260604, sink=5, clip=0.92. `results/line_retrieval/
+  skvq_*__L100.json`. Anchors from the 2026-11-10 KVarN entry.
+
+  | config | reorder | acc | bpe |
+  |---|---|---|---|
+  | full | — | 92-96.7 | 16 |
+  | kivi 2/2 | — | 13.3 | 2.25 |
+  | kvarn 2/2 | — | 46.7 | 2.25 |
+  | skvq 16/16 | pre-rod | 93.3 | — |
+  | skvq K16/V2 | pre-rod | 83.3 | — |
+  | skvq K2/V16 | pre-rod | 0.0 | — |
+  | skvq 2/2 w128 g128 (paper config) | pre-rod | 0.0 | 2.25 |
+  | skvq 2/2 w128 g128 | no-rod | 0.0 | 2.25 |
+  | skvq 2/2 w0 g128 | pre-rod | 0.0 | 2.13 |
+  | skvq K2/V16 g128 | **post-rod** | 23.3 | — |
+  | skvq 2/2 w128 g128 | **post-rod** | 23.3 | 2.25 |
+  | skvq K2/V16 g32 | **post-rod** | 83.3 | — |
+  | skvq 2/2 w128 g32 | **post-rod** | **63.3** | 3.0 |
+
+- Findings:
+  1. **Integration exact**: 16/16 = 93.3 ≈ full; V@2 costs only ~10 pts
+     (83.3) — better than KIVI's V@2 (76.7): SKVQ's reorder+clip V
+     mechanism works on Qwen3.
+  2. **Calibration must match the cached tensor**: official stats hook
+     k_proj (PRE-RoPE, pre-QK-norm) because their engine caches pre-RoPE
+     keys (pre_rope=True). Our harness caches post-RoPE → pre-rod reorder
+     collapses K@2 to 0.0; recalibrating on the actual cache tensors
+     (`calibrate_skvq.py --hook cache`, `_postrod.pt`) rescues it to 23.3.
+  3. **Qwen3 K needs fine channel groups**: g32 (3.0 bpe) + post-rod →
+     K2/V16 83.3, 2/2 63.3. Consistent with the QK-norm channel-outlier
+     structure found in the KVarN entry.
+- Paper target: SKVQ@2/2 ≫ KIVI@2/2 (their Tab: needle/LongBench, llama-2,
+  pre-RoPE); reorder & window each necessary (their ablations).
+- Verdict: **趋势对齐 + codec/布局逐位等价证明**（与 KVarN 的对齐策略一致）。
+  SKVQ > KIVI at 2/2 holds on our harness too (63.3 or 23.3 vs 13.3) ✓;
+  window/reorder ablations are confounded by the K@2 collapse at g128 —
+  re-run at g32 post-rod before claiming their directions on Qwen3.
+  Absolute numbers not comparable to paper (llama-2 + pre-RoPE engine vs
+  Qwen3 + post-RoPE harness). Follow-ups: g32 post-rod ablation trio,
+  1.5-bit V, LongBench rows, L100-600 n=100 sweep.
+
+---
+
 ### 2026-11-09 codec micro-bench (P1 prep)
 - Config: cuda1, bf16 tiles [1,8,8704,128] (600-line prompt equivalent).
 - Result (`scripts/bench_codec.py`): kvarn-8it encode 5.5ms/layer (0.20s per

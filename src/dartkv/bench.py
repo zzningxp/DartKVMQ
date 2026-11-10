@@ -20,6 +20,7 @@ from .methods.full import FullMethod
 from .methods.kivi import KiviMethod
 from .methods.kvarn import KvarnMethod
 from .methods.rdkv import RdkvMethod
+from .methods.skvq import SkvqMethod
 from .tasks.line_retrieval import LineRetrievalTask
 
 # paper-recommended decoding per model family (KVarN App. D)
@@ -33,17 +34,26 @@ GEN_PRESETS: dict[str, dict] = {
 def make_method(spec: str, bits: int = 2, group: int = 128, sink: int = 128,
                 varn_iters: int = 8, bits_k: int | None = None,
                 bits_v: int | None = None, rtn_quantile: float = 0.0,
-                budget: int = 1024):
-    """spec: full | kivi | kvarn | kvarn_h | rdkv
+                budget: int = 1024, window: int = 128, skvq_clip: float = 0.92,
+                skvq_fp8: bool = False, reorder_file: str | None = None):
+    """spec: full | kivi | kvarn | kvarn_h | skvq | rdkv
     (kvarn_h = Hadamard-only = KVarN w/o VarN, i.e. varn_iters=0 → scales
     collapse to 1; paper Tab.4 'Hadamard' row).
     bits_k/bits_v: K/V-only ablation overrides (default to bits).
     sink applies to kivi too (paper App. D: all quantized methods run the
     unified three-region layout S=128/G=128/R=128).
     rtn_quantile: KVarN percentile-range RTN (official KVARN_RTN_QUANTILE).
-    budget: RDKV n — FP16-equivalent tokens per layer (paper budget axis)."""
+    budget: RDKV n — FP16-equivalent tokens per layer (paper budget axis).
+    skvq extras: window W (sliding FP16 window; `group` doubles as the
+    channel gsize), skvq_clip (unified clipping 0.91-0.97, official
+    default 0.92), skvq_fp8 (e4m3 scale/zp storage), reorder_file
+    (calibration reorder indices, see scripts/calibrate_skvq.py)."""
     bk = bits if bits_k is None else bits_k
     bv = bits if bits_v is None else bits_v
+    if isinstance(bk, float) and bk == int(bk):
+        bk = int(bk)
+    if isinstance(bv, float) and bv == int(bv):
+        bv = int(bv)
     if spec == "full":
         return FullMethod()
     if spec == "kivi":
@@ -57,6 +67,10 @@ def make_method(spec: str, bits: int = 2, group: int = 128, sink: int = 128,
         return KvarnMethod(bits_k=bk, bits_v=bv, group_size=group,
                            sink_tokens=sink, varn_iters=0,
                            rtn_quantile=rtn_quantile)
+    if spec == "skvq":
+        return SkvqMethod(bits_k=bk, bits_v=bv, group_size=group,
+                          window=window, sink_tokens=sink, clip=skvq_clip,
+                          fp8_scales=skvq_fp8, reorder_file=reorder_file)
     if spec == "rdkv":
         return RdkvMethod(budget_tokens=budget)
     raise ValueError(spec)

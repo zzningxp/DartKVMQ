@@ -1,0 +1,394 @@
+{
+ "summary": {
+  "task": "line_retrieval",
+  "method": "skvq",
+  "method_kw": {
+   "bits": 2.0,
+   "group": 128,
+   "sink": 5,
+   "varn_iters": 8,
+   "rtn_quantile": 0.0,
+   "budget": 1024,
+   "window": 128,
+   "skvq_clip": 0.92,
+   "skvq_fp8": false,
+   "reorder_file": null
+  },
+  "n": 30,
+  "max_new": 32,
+  "gen_kwargs": {
+   "do_sample": false
+  },
+  "acc": 0.0,
+  "wall_s": 43.575393199920654,
+  "lines": 100,
+  "model": "Qwen/Qwen3-4B"
+ },
+ "bits_report": {
+  "bpe_k": 2.25,
+  "bpe_v": 2.25,
+  "fp16_eq_tokens_per_head": 133.0
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "lines": 100,
+    "k": 87
+   },
+   "answer": "6EJMB4C3UM",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1453,
+   "gen_text": "16\n1\n\n1\n\n\n20\n\n1: 8\n\n1: \n3\n\n###1:\n\n"
+  },
+  {
+   "i": 1,
+   "meta": {
+    "lines": 100,
+    "k": 76
+   },
+   "answer": "TWPMN16S86",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1435,
+   "gen_text": "20200000000000000000000000000000"
+  },
+  {
+   "i": 2,
+   "meta": {
+    "lines": 100,
+    "k": 88
+   },
+   "answer": "HWN95OSJHJ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1453,
+   "gen_text": "So\n180\n\nThe\n1\n\nT\n1\ntT1\n\n# 1\n \nThe 12\n"
+  },
+  {
+   "i": 3,
+   "meta": {
+    "lines": 100,
+    "k": 99
+   },
+   "answer": "IYMI7X20BX",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1473,
+   "gen_text": "1.00\nL0\n0\n00\n\n\n0\n2.0\n2000 line\n21.0\n"
+  },
+  {
+   "i": 4,
+   "meta": {
+    "lines": 100,
+    "k": 27
+   },
+   "answer": "19UYCU84JO",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1413,
+   "gen_text": "The problem: 1\n\n\n\n\n\n\n\n\n\nThe\nX\n1\n1\n20100\n2: "
+  },
+  {
+   "i": 5,
+   "meta": {
+    "lines": 100,
+    "k": 90
+   },
+   "answer": "YXFQ4B8VGX",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1446,
+   "gen_text": "The problem with0\n110# 10000\n-128 1: 010010\n1"
+  },
+  {
+   "i": 6,
+   "meta": {
+    "lines": 100,
+    "k": 79
+   },
+   "answer": "B79B6RIOIU",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1427,
+   "gen_text": "1\n- \n\n\n\n\n\n1.0\n\n7\n120\nX\n\n\n\nXW\n\n2\n"
+  },
+  {
+   "i": 7,
+   "meta": {
+    "lines": 100,
+    "k": 14
+   },
+   "answer": "YCW20NWRS5",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1420,
+   "gen_text": "The    1:  X\n\nX\n\n#17K1X\n 16=1X is X1: "
+  },
+  {
+   "i": 8,
+   "meta": {
+    "lines": 100,
+    "k": 8
+   },
+   "answer": "H9UFH5BCO7",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1433,
+   "gen_text": "1. 2 2N 1 1212: 1 191:  12 1 122"
+  },
+  {
+   "i": 9,
+   "meta": {
+    "lines": 100,
+    "k": 87
+   },
+   "answer": "JT57Z7TORK",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1453,
+   "gen_text": "20\n3 1: 2 0 1: 0\n3: 0\n 12 10\n20 "
+  },
+  {
+   "i": 10,
+   "meta": {
+    "lines": 100,
+    "k": 47
+   },
+   "answer": "FDW59VGXFQ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1437,
+   "gen_text": "#   0020  1 110   10\n\n 1\n1.1\n1\n\n#"
+  },
+  {
+   "i": 11,
+   "meta": {
+    "lines": 100,
+    "k": 54
+   },
+   "answer": "XCBUCSQUX5",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1460,
+   "gen_text": "I'm 101\n210\n 100201\n211120\n30201 is"
+  },
+  {
+   "i": 12,
+   "meta": {
+    "lines": 100,
+    "k": 43
+   },
+   "answer": "1I6CLAD8Q2",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1449,
+   "gen_text": "The\nThe\nThe code: X\nX\n0\nThe\n\"X\n\nX\nX0: \n\n\n\nX3"
+  },
+  {
+   "i": 13,
+   "meta": {
+    "lines": 100,
+    "k": 54
+   },
+   "answer": "ROM8PXNSDF",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1433,
+   "gen_text": "The  1000.2: \n100\n100: 1\n110\n110\n\n"
+  },
+  {
+   "i": 14,
+   "meta": {
+    "lines": 100,
+    "k": 44
+   },
+   "answer": "0U6HBP17S9",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1432,
+   "gen_text": "22212312222\n\n2012 1002021 2120222"
+  },
+  {
+   "i": 15,
+   "meta": {
+    "lines": 100,
+    "k": 40
+   },
+   "answer": "4JRBN4GGRN",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1444,
+   "gen_text": " 2012\n10\n120\n2.000: 9\n3\n 2\n: \n3."
+  },
+  {
+   "i": 16,
+   "meta": {
+    "lines": 100,
+    "k": 36
+   },
+   "answer": "N611467MT5",
+   "pred": "1001220010",
+   "correct": false,
+   "n_prompt_tokens": 1420,
+   "gen_text": "01010: The  100\n\nI have to be the  1001220010 0"
+  },
+  {
+   "i": 17,
+   "meta": {
+    "lines": 100,
+    "k": 75
+   },
+   "answer": "WKWYB1C6SS",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1420,
+   "gen_text": "1\n\n10:     9000  3. 30\n1: 30: 23"
+  },
+  {
+   "i": 18,
+   "meta": {
+    "lines": 100,
+    "k": 100
+   },
+   "answer": "AMWBWP85HP",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1449,
+   "gen_text": "The  55\nS\n9 5:  10  1:5 9. 5 50 20"
+  },
+  {
+   "i": 19,
+   "meta": {
+    "lines": 100,
+    "k": 53
+   },
+   "answer": "T507JOOP0E",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1439,
+   "gen_text": ": The181: 1: 1\n1: 1\n11\n1: \n 17\n11\n1"
+  },
+  {
+   "i": 20,
+   "meta": {
+    "lines": 100,
+    "k": 82
+   },
+   "answer": "NCYWHT8ZWB",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1427,
+   "gen_text": "The\n32Y   202\n\n 22\n\n12\n35\n3232115:"
+  },
+  {
+   "i": 21,
+   "meta": {
+    "lines": 100,
+    "k": 5
+   },
+   "answer": "CJCQZCVSDM",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1430,
+   "gen_text": "15\n33323\n12310\n12.0\n\nThe \" 1 1112121"
+  },
+  {
+   "i": 22,
+   "meta": {
+    "lines": 100,
+    "k": 84
+   },
+   "answer": "2AZRV1D6IJ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1460,
+   "gen_text": "10\n100\n\n000\n# 0\n\n\n0\n0\n0\n0\n5: \n\n0"
+  },
+  {
+   "i": 23,
+   "meta": {
+    "lines": 100,
+    "k": 49
+   },
+   "answer": "11PKI9AX3C",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1445,
+   "gen_text": "E19\n2S\n010\n\n\n0\n000000000010\n0003"
+  },
+  {
+   "i": 24,
+   "meta": {
+    "lines": 100,
+    "k": 95
+   },
+   "answer": "VNTV1MUOJQ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1437,
+   "gen_text": "The    9320-7#7: 6\n: \n: 20\n#:6\n7 2"
+  },
+  {
+   "i": 25,
+   "meta": {
+    "lines": 100,
+    "k": 62
+   },
+   "answer": "EXOGTWBSCY",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1431,
+   "gen_text": "2\n12\n1.     1 10\n2\n2   2220\n1200"
+  },
+  {
+   "i": 26,
+   "meta": {
+    "lines": 100,
+    "k": 8
+   },
+   "answer": "GQ6R2O5B4S",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1428,
+   "gen_text": "10030: 00 is the  0000000000000000007"
+  },
+  {
+   "i": 27,
+   "meta": {
+    "lines": 100,
+    "k": 81
+   },
+   "answer": "Z6CSGK2IIC",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1436,
+   "gen_text": "6455\n\n1. 1. X\n\n6\n110\n7\n\n\nThe\nThe1: 12"
+  },
+  {
+   "i": 28,
+   "meta": {
+    "lines": 100,
+    "k": 47
+   },
+   "answer": "G2HZKCW77D",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1420,
+   "gen_text": "X\n\nA: X\n\nThe code\n 0\n\n\n\n\n\n\n\nX\nX\n\n\n64\n\nThe"
+  },
+  {
+   "i": 29,
+   "meta": {
+    "lines": 100,
+    "k": 98
+   },
+   "answer": "GLA4EJSQ23",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1417,
+   "gen_text": "1\n\n\n\n1\n1010:  \n\n\n100\n10: \n210: \n"
+  }
+ ]
+}

@@ -21,6 +21,7 @@ from dartkv.cache.compressed import CompressedCache  # noqa: E402
 from dartkv.methods.full import FullMethod  # noqa: E402
 from dartkv.methods.kivi import KiviMethod  # noqa: E402
 from dartkv.methods.kvarn import KvarnMethod  # noqa: E402
+from dartkv.methods.skvq import SkvqMethod  # noqa: E402
 
 MODEL = "hf-internal-testing/tiny-random-LlamaForCausalLM"
 N_NEW = 16
@@ -63,6 +64,8 @@ def main():
         ("kivi", KiviMethod(bits_k=2, bits_v=2, group_size=8)),
         ("kvarn", KvarnMethod(bits_k=2, bits_v=2, group_size=8,
                               sink_tokens=4, varn_iters=8)),
+        ("skvq", SkvqMethod(bits_k=2, bits_v=2, group_size=8, window=4,
+                            sink_tokens=2, clip=0.92)),
     ]
     outs = {}
     for name, m in methods:
@@ -74,7 +77,12 @@ def main():
         assert n_cached == total, (name, n_cached, total)
         # storage shape checks on layer 0
         st = getattr(m, "state", None)
-        if st is not None:
+        if st is not None and name == "skvq":
+            s0 = st[0]
+            print(f"  [{name}] quant={s0['n_quant']} "
+                  f"sink={s0['sink_k'].shape[2] if s0['sink_k'] is not None else 0} "
+                  f"win={s0['win_k'].shape[2] if s0['win_k'] is not None else 0}")
+        elif st is not None:
             print(f"  [{name}] groups={len(st[0]['groups'])} "
                   f"sink={st[0]['sink_k'].shape[2] if st[0]['sink_k'] is not None else 0} "
                   f"tail={st[0]['tail_k'].shape[2]}")
@@ -83,7 +91,7 @@ def main():
 
     # quantized methods must be finite (asserted) and should perturb the
     # output relative to full (2-bit on random weights -> likely differs)
-    for q in ("kivi", "kvarn"):
+    for q in ("kivi", "kvarn", "skvq"):
         same = torch.equal(outs[q], outs["full"])
         print(f"  {q} == full: {same} (not required to differ)")
 

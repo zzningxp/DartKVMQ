@@ -17,3 +17,4 @@ __pycache__/
 # Environments / OS
 .venv/
 .DS_Store
+*.pt

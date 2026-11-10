@@ -77,21 +77,27 @@ class GroupedOnlineMethod(CompressionMethod):
         return ks, vs
 
     # -- layout logic -----------------------------------------------------
+    def _absorb_sink(self, st: dict, k, v):
+        """Top up the FP16 sink from the front of (k, v); return remainder."""
+        if self.S <= 0:
+            return k, v
+        have = (st["sink_k"].shape[2]
+                if isinstance(st["sink_k"], torch.Tensor) else 0)
+        if have >= self.S:
+            return k, v
+        take = min(self.S - have, k.shape[2])
+        if have:
+            st["sink_k"] = torch.cat([st["sink_k"], k[:, :, :take]], dim=2)
+            st["sink_v"] = torch.cat([st["sink_v"], v[:, :, :take]], dim=2)
+        else:
+            st["sink_k"] = k[:, :, :take].clone()
+            st["sink_v"] = v[:, :, :take].clone()
+        return k[:, :, take:], v[:, :, take:]
+
     def ingest(self, layer_idx: int, k, v, is_first_pass: bool):
         st = self.state[layer_idx]
         # sink: fp16 prefix, topped up across calls until S tokens collected
-        if self.S > 0:
-            have = (st["sink_k"].shape[2]
-                    if isinstance(st["sink_k"], torch.Tensor) else 0)
-            if have < self.S:
-                take = min(self.S - have, k.shape[2])
-                if have:
-                    st["sink_k"] = torch.cat([st["sink_k"], k[:, :, :take]], dim=2)
-                    st["sink_v"] = torch.cat([st["sink_v"], v[:, :, :take]], dim=2)
-                else:
-                    st["sink_k"] = k[:, :, :take].clone()
-                    st["sink_v"] = v[:, :, :take].clone()
-                k, v = k[:, :, take:], v[:, :, take:]
+        k, v = self._absorb_sink(st, k, v)
         # append to tail
         st["tail_k"] = k if st["tail_k"] is None else torch.cat([st["tail_k"], k], dim=2)
         st["tail_v"] = v if st["tail_v"] is None else torch.cat([st["tail_v"], v], dim=2)

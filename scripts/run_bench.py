@@ -42,7 +42,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--method", default="full",
-                    choices=["full", "kivi", "kvarn", "kvarn_h", "rdkv"])
+                    choices=["full", "kivi", "kvarn", "kvarn_h", "skvq",
+                             "rdkv"])
     ap.add_argument("--task", default="line_retrieval",
                     choices=["line_retrieval", "ifeval", "longbench"])
     ap.add_argument("--datasets", type=str, nargs="+", default=None,
@@ -53,10 +54,11 @@ def main():
                     default=[100, 200, 300, 400, 500, 600])
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--max-new", type=int, default=32)
-    ap.add_argument("--bits", type=int, default=2)
-    ap.add_argument("--bits-k", type=int, default=None,
+    ap.add_argument("--bits", type=float, default=2,
+                    help="quant bits (SKVQ allows 1.5)")
+    ap.add_argument("--bits-k", type=float, default=None,
                     help="bits for K only (ablation; defaults to --bits)")
-    ap.add_argument("--bits-v", type=int, default=None,
+    ap.add_argument("--bits-v", type=float, default=None,
                     help="bits for V only (ablation; defaults to --bits)")
     ap.add_argument("--group", type=int, default=128)
     ap.add_argument("--sink", type=int, default=128)
@@ -67,6 +69,17 @@ def main():
     ap.add_argument("--budget", type=int, default=1024,
                     help="RDKV budget n: FP16-equivalent tokens per layer "
                          "(paper axis {64,128,256,512,1024,2048})")
+    ap.add_argument("--window", type=int, default=128,
+                    help="SKVQ sliding FP16 window W (paper 128; 0 = off)")
+    ap.add_argument("--skvq-clip", type=float, default=0.92,
+                    help="SKVQ unified clipping (paper: 0.91-0.97)")
+    ap.add_argument("--skvq-fp8", action="store_true",
+                    help="SKVQ: store scale/zero in fp8 e4m3 (official "
+                         "longbench configs)")
+    ap.add_argument("--reorder-file", type=str, default=None,
+                    help="SKVQ calibration reorder .pt (official format; "
+                         "see scripts/calibrate_skvq.py). None = contiguous "
+                         "channel groups (SKVQ w/o reorder ablation)")
     ap.add_argument("--temperature", type=float, default=None)
     ap.add_argument("--top-p", type=float, default=None)
     ap.add_argument("--top-k", type=int, default=None)
@@ -104,7 +117,9 @@ def main():
 
     method_kw = dict(bits=args.bits, group=args.group, sink=args.sink,
                      varn_iters=args.varn_iters,
-                     rtn_quantile=args.rtn_quantile, budget=args.budget)
+                     rtn_quantile=args.rtn_quantile, budget=args.budget,
+                     window=args.window, skvq_clip=args.skvq_clip,
+                     skvq_fp8=args.skvq_fp8, reorder_file=args.reorder_file)
     if args.bits_k is not None or args.bits_v is not None:
         # K/V asymmetric ablation: make_method takes bits (mean) for
         # dispatch; pass through explicit kwargs for methods that accept them
@@ -112,7 +127,10 @@ def main():
         bv = args.bits_v if args.bits_v is not None else args.bits
         method_kw = dict(bits=bk, bits_v=bv, bits_k=bk, group=args.group,
                          sink=args.sink, varn_iters=args.varn_iters,
-                         rtn_quantile=args.rtn_quantile, budget=args.budget)
+                         rtn_quantile=args.rtn_quantile, budget=args.budget,
+                         window=args.window, skvq_clip=args.skvq_clip,
+                         skvq_fp8=args.skvq_fp8,
+                         reorder_file=args.reorder_file)
     out_dir = args.out or os.path.join("results", args.task)
 
     if args.task == "ifeval":
@@ -154,8 +172,17 @@ def main():
             tag = f"{args.model.split('/')[-1]}__{args.method}__{args.task}"
             if args.method == "rdkv":
                 tag += f"__n{args.budget}"
+            elif args.method == "skvq":
+                fmt = lambda x: int(x) if x == int(x) else x  # noqa: E731
+                tag += (f"__k{fmt(args.bits_k or args.bits)}"
+                        f"v{fmt(args.bits_v or args.bits)}"
+                        f"w{args.window}g{args.group}"
+                        f"{'rod' if args.reorder_file else ''}"
+                        f"{'fp8' if args.skvq_fp8 else ''}"
+                        f"c{args.skvq_clip}")
             elif args.method != "full":
-                tag += f"__k{args.bits}v{args.bits}"
+                fmt = lambda x: int(x) if x == int(x) else x  # noqa: E731
+                tag += f"__k{fmt(args.bits)}v{fmt(args.bits)}"
         save_report(report, args.model, out_dir, tag=tag)
         accs = [f"acc={report['summary']['acc']:.3f}"]
         if "acc_loose" in report["summary"]:
