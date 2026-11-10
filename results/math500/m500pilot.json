@@ -1,0 +1,85 @@
+{
+ "summary": {
+  "task": "math500",
+  "method": "full",
+  "method_kw": {
+   "bits": 2,
+   "group": 128,
+   "sink": 128,
+   "varn_iters": 8,
+   "rtn_quantile": 0.0,
+   "budget": 1024,
+   "window": 128,
+   "skvq_clip": 0.92,
+   "skvq_fp8": false,
+   "reorder_file": null
+  },
+  "n": 4,
+  "max_new": 8192,
+  "gen_kwargs": {
+   "do_sample": false
+  },
+  "acc": 1.0,
+  "wall_s": 180.3751676082611,
+  "model": "Qwen/Qwen3-4B"
+ },
+ "bits_report": {
+  "bpe_k": 16.0,
+  "bpe_v": 16.0,
+  "fp16_eq_tokens_per_head": null
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "subject": "Precalculus",
+    "level": 2,
+    "unique_id": "test/precalculus/807.json"
+   },
+   "answer": "\\left( 3, \\frac{\\pi}{2} \\right)",
+   "pred": "(3, \\frac{\\pi}{2})",
+   "correct": true,
+   "n_prompt_tokens": 55,
+   "gen_text": "<think>\nOkay, so I need to convert the point (0, 3) from rectangular coordinates"
+  },
+  {
+   "i": 1,
+   "meta": {
+    "subject": "Intermediate Algebra",
+    "level": 5,
+    "unique_id": "test/intermediate_algebra/1994.json"
+   },
+   "answer": "p - q",
+   "pred": "p - q",
+   "correct": true,
+   "n_prompt_tokens": 118,
+   "gen_text": "<think>\nOkay, so I need to find a way to express the double sum $\\sum_{j = 1}^\\i"
+  },
+  {
+   "i": 2,
+   "meta": {
+    "subject": "Algebra",
+    "level": 3,
+    "unique_id": "test/algebra/2584.json"
+   },
+   "answer": "\\frac{14}{3}",
+   "pred": "\\dfrac{14}{3}",
+   "correct": true,
+   "n_prompt_tokens": 55,
+   "gen_text": "<think>\nOkay, so I need to find the value of f(-2) + f(-1) + f(0) where the func"
+  },
+  {
+   "i": 3,
+   "meta": {
+    "subject": "Number Theory",
+    "level": 3,
+    "unique_id": "test/number_theory/572.json"
+   },
+   "answer": "9",
+   "pred": "9",
+   "correct": true,
+   "n_prompt_tokens": 22,
+   "gen_text": "<think>\nOkay, so I need to figure out how many positive whole-number divisors 19"
+  }
+ ]
+}

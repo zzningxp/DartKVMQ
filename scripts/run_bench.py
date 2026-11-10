@@ -29,13 +29,22 @@ from dartkv.tasks.line_retrieval import LineRetrievalTask  # noqa: E402
 class RawPrompter:
     """Bypass the chat template (paper prompts may be raw completions)."""
 
+    add_special_tokens = True  # raw text: let the tokenizer add bos
+
     def __call__(self, tokenizer, user_text):
         return user_text
 
 
 class ChatPrompter:
+
+    add_special_tokens = False  # template already emits bos_token
+
+    def __init__(self, enable_thinking: bool = False):
+        self.enable_thinking = enable_thinking
+
     def __call__(self, tokenizer, user_text):
-        return build_prompt(tokenizer, user_text)
+        return build_prompt(tokenizer, user_text,
+                            enable_thinking=self.enable_thinking)
 
 
 def main():
@@ -45,7 +54,8 @@ def main():
                     choices=["full", "kivi", "kvarn", "kvarn_h", "skvq",
                              "rdkv"])
     ap.add_argument("--task", default="line_retrieval",
-                    choices=["line_retrieval", "ifeval", "longbench"])
+                    choices=["line_retrieval", "ifeval", "longbench",
+                             "math500", "gsm8k"])
     ap.add_argument("--datasets", type=str, nargs="+", default=None,
                     help="longbench dataset names (default: EN16)")
     ap.add_argument("--max-len", type=int, default=32768,
@@ -90,6 +100,9 @@ def main():
                     help="raw completion prompt (skip chat template)")
     ap.add_argument("--greedy", action="store_true",
                     help="force do_sample=False (true greedy)")
+    ap.add_argument("--thinking", action="store_true",
+                    help="Qwen3 thinking mode (MATH500/1c protocol); "
+                         "default is non-thinking")
     ap.add_argument("--dtype", default="bfloat16",
                     choices=["bfloat16", "float16", "float32"],
                     help="model load dtype (default bfloat16)")
@@ -104,7 +117,8 @@ def main():
     else:
         gen_over = dict(temperature=args.temperature, top_p=args.top_p,
                         top_k=args.top_k)
-    prompter = RawPrompter() if args.no_chat else ChatPrompter()
+    prompter = RawPrompter() if args.no_chat else \
+        ChatPrompter(enable_thinking=args.thinking)
 
     tok = AutoTokenizer.from_pretrained(args.model)
     dtype = {"bfloat16": torch.bfloat16, "float16": torch.float16,
@@ -135,6 +149,16 @@ def main():
 
     if args.task == "ifeval":
         runs = [("all", IFEvalTask())]
+    elif args.task == "math500":
+        from dartkv.tasks.math500 import MATH500Task
+        runs = [("all", MATH500Task())]
+        if args.max_new == 32:  # CLI default is line-retrieval's
+            args.max_new = 8192  # paper: 8192 for Qwen3 thinking
+    elif args.task == "gsm8k":
+        from dartkv.tasks.gsm8k import GSM8KTask
+        runs = [("all", GSM8KTask())]
+        if args.max_new == 32:
+            args.max_new = 256  # benchmark.md Core protocol
     elif args.task == "longbench":
         from dartkv.tasks.longbench import EN16, LongBenchTask
         lb = []

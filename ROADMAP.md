@@ -28,7 +28,7 @@ src/dartkv/
   alloc/     MCKP 拉格朗日 + Bennett 反注水（RDKV）
   methods/   full / kivi / kvarn / rdkv / skvq（三区分组布局；skvq 为精确滑窗变体）
   cache/     CompressedCache —— HF transformers Cache 路由到方法
-  tasks/     benchmark 任务（line_retrieval、longbench、ifeval + ifeval_checker）
+  tasks/     benchmark 任务（line_retrieval、longbench、ifeval + ifeval_checker、math500、gsm8k）
   bench.py   统一 runner：model × method × task → results/*.json
 scripts/     入口（run_bench.py、smoke_cache.py、calibrate_skvq.py、compare_official.py）
 configs/     实验配置 + skvq_calib/ 重排文件（*.pt 被 gitignore，需要就 git add -f）
@@ -103,6 +103,7 @@ $PY scripts/run_bench.py --model Qwen/Qwen3-4B --method kvarn --lines 100 200 --
 
 ## 当前状态
 
+- 2026-11-10 (ModelScope 通道 + 双BOS修复 + MATH500 接入): ① ModelScope 下载通道打通（免 token、网络通、modelscope 包在位；`addict` 已补装）——数据侧 `AI-ModelScope/MATH-500`（=HuggingFaceH4/MATH-500）已落地 `data/math500/test.jsonl`（500 条，schema 验证过）；模型侧验证 `LLM-Research/Meta-Llama-3.1-8B-Instruct` 免 token 可下（用户选择暂不下载）。② **修复 chat 模板双 BOS bug**：模板自带 `{{- bos_token }}` + tokenizer 默认 `add_special_tokens=True` → Llama prompt 双 BOS（跑题复读 system prefill 的元凶）；Qwen 不加自动 BPE 特殊 token，历史 Qwen3 结果不受影响。修复=prompter 协议带 `add_special_tokens` 属性（bench.py + run_bench.py）。③ 官方 Llama-3.1 chat 模板资产化（`src/dartkv/chat_templates/llama-3.1.jinja`，来自 ModelScope 上游 tokenizer_config）+ `ensure_chat_template()`（本地快照无模板时注入；base 版快照本来就没有）+ GEN_PRESETS key `llama-3.1`→`llama-3`（匹配 `Meta-Llama-3___1-8B` 这类本地目录名）。④ 本地 Llama base 版判别：蜜罐指令测试（2+2 复读）+ raw 续写测试 → base，不可用于 1a/1b/2a。⑤ MATH500 任务接入（`tasks/math500.py`：\boxed 平衡括号提取 + 轻量 LaTeX 归一化，CPU 用例 6/6）+ runner `--thinking` 旗标（Qwen3 thinking mode，1c 口径），pilot n=4 full-KV 4/4（45s/样本）；**n=100×{full,kivi,kvarn_h,kvarn} 矩阵在跑**（论文 Tab.1 目标 82.6/77.8/78.9/79.2）。⑥ GSM8K 任务接入（`tasks/gsm8k.py`，数据从本地 HF 缓存落地 data/gsm8k/，评分校验通过；GPU 排队中）。LongBench p2 pilot 结果补录 experiments.md（rdkv@1024/256 在 trec/hotpotqa 零损失；rdkv256 hotpotqa 待补跑）。
 - 2026-11-10 (SKVQ 并入): 官方代码快照移入 `external/SKVQ/`（与 KVarN 同等待遇：不跟踪、保持 pristine；合作者树里的原版可从 git 历史 `HEAD:SKVQ/` 找回）。codec+精确滑窗布局 port 完成（`src/dartkv/quant/skvq.py` + `methods/skvq.py` + `scripts/calibrate_skvq.py`），与官方**逐位等价**（tests/test_skvq.py 9/9，无快照环境自动跳过）。Qwen3-4B 趋势对齐：SKVQ 2/2 (63.3@g32) > KIVI 2/2 (13.3)；关键发现：校准统计必须与实际缓存张量匹配（post-RoPE harness 用 `--hook cache` 的 `_postrod.pt`；官方 pre-RoPE 校准配他们的 pre_rope=True 引擎）。详见 docs/skvq.md、docs/experiments.md。
 
 - 2026-11-10 (P2 开工): RdkvMethod 实现完成（src/dartkv/methods/rdkv.py）：SDPA 包装器抓 post-RoPE 窗口 Q 的 probe（w_t SnapKV 式池化、w_c ThinK 分数）、on-the-fly ε 表（可选缓存表）、MCKP 两阶段分配（V 层级 token 集 + K per-(l,h) 通道位宽——dense 路径无法表达 per-head 驻留 token 集，按 SnapKV 先例跨 head 聚合，K 通道置零精确等价）、被驱逐 token 物理删除、Zone C FP16 追加。预算口径按论文 B_head=32nd。单测 6 个（probe 形状/预算约束/大预算无损/decode 追加/补丁卸载/tiny 端到端）。LongBench 任务接入（对齐 2a 前置）：官方 metrics+prompts+maxgen 逐字 vendor，数据 data/longbench/（THUDM data.zip，datasets-lib 脚本式加载已废弃→直接 jsonl），trec/hotpotqa 冒烟通过。待跑：Qwen3-4B LongBench pilot（模型不 gated）→ Llama-3.1 对齐（等 token）。
@@ -113,7 +114,7 @@ $PY scripts/run_bench.py --model Qwen/Qwen3-4B --method kvarn --lines 100 200 --
 
 ## 遗留问题（跨方法）
 
-1. Llama-3.1-8B-Instruct 的 HF 下载需要 token/镜像？（国内网络：设 HF_ENDPOINT 镜像？待确认——镜像已通，gated 模型待验证 token）
+1. ~~Llama-3.1-8B-Instruct 的 HF 下载需要 token/镜像？~~ 已探明（2026-11-10）：HF 镜像对 gated 仓库无效；**ModelScope 免 token 可下** `LLM-Research/Meta-Llama-3.1-8B-Instruct`（已验证 config 可拉）。本地 `/mnt/new1t/models/Meta-Llama-3___1-8B` 经行为验证是 **base 版**（复读 prompt、raw 续写），不能做指令评测。用户决定暂不下载 Instruct，先用 Qwen3-4B 推进（1c 本就是 Qwen3 实验）。
 2. ~~transformers 5.x 的 Cache API 适配~~ 已解决：CompressedCache(DynamicCache) 重写 update(key,value,layer_idx,**kw)，pass 边界用 layer_idx 回绕检测；tiny 模型实测 generate() 可用。
 3. RDKV ε 表的校准数据：论文用 LongBench prefill 前缀；我们先用 wikitext，对齐实验时换 LongBench 前缀。
 4. LongBench 评测脚本的口径（max_len 截断、chat template）需与 RDKV 论文对齐——他们未完全公开细节，用 LongBench 官方默认。

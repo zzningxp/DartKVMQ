@@ -1,0 +1,60 @@
+{
+ "summary": {
+  "task": "line_retrieval",
+  "method": "full",
+  "method_kw": {
+   "bits": 2,
+   "group": 128,
+   "sink": 128,
+   "varn_iters": 8,
+   "rtn_quantile": 0.0,
+   "budget": 1024,
+   "window": 128,
+   "skvq_clip": 0.92,
+   "skvq_fp8": false,
+   "reorder_file": null
+  },
+  "n": 2,
+  "max_new": 32,
+  "gen_kwargs": {
+   "do_sample": true,
+   "temperature": 0.6,
+   "top_p": 0.9
+  },
+  "acc": 0.0,
+  "wall_s": 1.7213094234466553,
+  "lines": 100,
+  "model": "/mnt/new1t/models/Meta-Llama-3___1-8B/"
+ },
+ "bits_report": {
+  "bpe_k": 16.0,
+  "bpe_v": 16.0,
+  "fp16_eq_tokens_per_head": null
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "lines": 100,
+    "k": 87
+   },
+   "answer": "6EJMB4C3UM",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1305,
+   "gen_text": "This is a question from the Cutting Knowledge Test. It is a popular test used to"
+  },
+  {
+   "i": 1,
+   "meta": {
+    "lines": 100,
+    "k": 76
+   },
+   "answer": "TWPMN16S86",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1295,
+   "gen_text": "# Solution:\n\nThe solution to the problem can be found by analyzing the pattern o"
+  }
+ ]
+}

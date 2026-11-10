@@ -73,6 +73,55 @@ Alignment targets live in `docs/papers/*.md` and `ROADMAP.md` phases.
 
 ---
 
+### 2026-11-10 LongBench pilot (P2, Qwen3-4B)
+- Config: trec + hotpotqa, n=50, greedy, bf16+SDPA, probe S_w=32/pool=5,
+  on-the-fly ε tables. Files: `results/longbench/p2_*.json`.
+
+  | dataset | full | rdkv@1024 | rdkv@256 |
+  |---|---|---|---|
+  | hotpotqa (F1) | 0.492 | **0.496** | (missing run) |
+  | trec (acc) | 0.680 | 0.680 | 0.680 |
+
+- Verdict: zero-loss at both budgets on these two (trec identical
+  predictions; hotpotqa +0.4pt). 机制层面 probe+MCKP 正常。Only 2/16
+  tasks, Qwen3 not Llama → NOT the 2a alignment (that needs Llama-3.1-8B
+  Instruct × 16 tasks × 4 budgets; blocked on Instruct weights — local
+  snapshot is BASE, see 2026-11-10 ModelScope entry). Follow-up:
+  re-run rdkv@256 hotpotqa when GPU free.
+
+---
+
+### 2026-11-10 ModelScope channel + double-BOS fix + MATH500/GSM8K tasks
+- ModelScope: ungated channel verified (Llama-3.1-8B-Instruct reachable,
+  config pulled; `addict` installed for msdatasets). Landed
+  `data/math500/test.jsonl` (AI-ModelScope/MATH-500 = HuggingFaceH4
+  mirror, 500 rows, schema verified).
+- Local `/mnt/new1t/models/Meta-Llama-3___1-8B` verified **BASE**
+  behaviorally (echoes "2+2" prompt; raw completion "The capital of
+  France is → a city of many faces"). Not usable for instruct evals; no
+  Instruct Llama locally; user opted to proceed with Qwen3-4B.
+- **Double-BOS bug found & fixed**: chat template emits `{{- bos_token }}`
+  AND tokenizer added one → Llama prompts had 2× BOS (symptom: model
+  meta-commenting on its system prefill, 0% line-retrieval). Fix:
+  prompter protocol `add_special_tokens` attr (bench.py, run_bench.py).
+  Qwen3 unaffected (no auto special tokens) → all prior Qwen3 numbers
+  stand. Also: official Llama-3.1 template vendored
+  (src/dartkv/chat_templates/llama-3.1.jinja, injected via
+  `ensure_chat_template` for template-less snapshots; rendering verified
+  char-exact incl. the date-string system prefill), GEN_PRESETS key
+  `llama-3.1`→`llama-3` (matches `Meta-Llama-3___1-8B` dir names).
+- MATH500 task (1c): `tasks/math500.py` — last-`\boxed{}` balanced-brace
+  extraction + light LaTeX normalization (score checks 6/6 on CPU).
+  `--thinking` flag added (Qwen3 thinking, 1c protocol; greedy ≈ Avg@3
+  per benchmark.md, noted deviation). Pilot n=4 full-KV: **4/4**, 45
+  s/sample (thinking, max_new 8192) → n=100 × {full,kivi,kvarn_h,kvarn}
+  matrix launched (running). Paper Tab.1 target: 82.6/77.8/78.9/79.2.
+- GSM8K task (Core #1): `tasks/gsm8k.py` — data/gsm8k/test.jsonl (1319,
+  from local HF-mirror cache), `####`-else-last-number scoring, comma/$
+  handling verified. GPU run queued (GPU busy with MATH500 matrix).
+
+---
+
 ### 2026-11-09 codec micro-bench (P1 prep)
 - Config: cuda1, bf16 tiles [1,8,8704,128] (600-line prompt equivalent).
 - Result (`scripts/bench_codec.py`): kvarn-8it encode 5.5ms/layer (0.20s per

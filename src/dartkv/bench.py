@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import pathlib
 import time
 
 import torch
@@ -23,12 +24,29 @@ from .methods.rdkv import RdkvMethod
 from .methods.skvq import SkvqMethod
 from .tasks.line_retrieval import LineRetrievalTask
 
-# paper-recommended decoding per model family (KVarN App. D)
+# paper-recommended decoding per model family (KVarN App. D).
+# key 'llama-3' (not 'llama-3.1') so local snapshot dirs like
+# Meta-Llama-3___1-8B match too.
 GEN_PRESETS: dict[str, dict] = {
     "qwen3": dict(do_sample=True, temperature=0.7, top_p=0.8, top_k=20),
-    "llama-3.1": dict(do_sample=True, temperature=0.6, top_p=0.9),
+    "llama-3": dict(do_sample=True, temperature=0.6, top_p=0.9),
     "phi-4": dict(do_sample=False),
 }
+
+_TEMPLATE_DIR = pathlib.Path(__file__).parent / "chat_templates"
+
+
+def ensure_chat_template(tokenizer):
+    """Fill in the official chat template for snapshots that ship without
+    one (our local ModelScope copy of Meta-Llama-3.1-8B-Instruct has a
+    tokenizer_config.json stripped of chat_template; upstream has it).
+    Keeps prompts byte-identical to HF/vLLM stacks."""
+    if getattr(tokenizer, "chat_template", None) is not None:
+        return
+    name = (getattr(tokenizer, "name_or_path", "") or "").lower()
+    if "llama-3" in name:
+        tokenizer.chat_template = (_TEMPLATE_DIR
+                                   / "llama-3.1.jinja").read_text()
 
 
 def make_method(spec: str, bits: int = 2, group: int = 128, sink: int = 128,
@@ -93,18 +111,28 @@ def gen_kwargs_for(model_id: str, overrides: dict | None = None):
     return out
 
 
-def build_prompt(tokenizer, user_text: str) -> str:
-    """Chat-template the prompt. enable_thinking=False for Qwen3 non-thinking
-    evals; other templates ignore the extra jinja variable."""
+def build_prompt(tokenizer, user_text: str,
+                 enable_thinking: bool = False) -> str:
+    """Chat-template the prompt. enable_thinking=False for Qwen3
+    non-thinking evals (template inserts an empty <think> block); True
+    for thinking-mode tasks (MATH500 on Qwen3). Other templates ignore
+    the extra jinja variable."""
+    ensure_chat_template(tokenizer)
     try:
         return tokenizer.apply_chat_template(
             [{"role": "user", "content": user_text}],
             tokenize=False, add_generation_prompt=True,
-            enable_thinking=False)
+            enable_thinking=enable_thinking)
     except TypeError:  # template signature without the kwarg
         return tokenizer.apply_chat_template(
             [{"role": "user", "content": user_text}],
             tokenize=False, add_generation_prompt=True)
+
+
+# chat-templated text already carries bos ({{- bos_token }} in the
+# template); tokenizing with add_special_tokens=True would double it on
+# Llama (Qwen adds no bos, hence unnoticed until Llama runs)
+build_prompt.add_special_tokens = False
 
 
 def run_task(model, tokenizer, task, method_spec: str, n: int,
@@ -123,7 +151,9 @@ def run_task(model, tokenizer, task, method_spec: str, n: int,
         method = make_method(method_spec, **method_kw)
         cache = CompressedCache(method, model_config=model.config)
         text = prompter(tokenizer, s["prompt"])
-        enc = tokenizer(text, return_tensors="pt").to(device)
+        enc = tokenizer(text, return_tensors="pt",
+                        add_special_tokens=getattr(
+                            prompter, "add_special_tokens", True)).to(device)
         n_in = enc.input_ids.shape[1]
         with torch.no_grad():
             out = model.generate(**enc, past_key_values=cache,

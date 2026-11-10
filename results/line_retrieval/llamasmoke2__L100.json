@@ -1,0 +1,96 @@
+{
+ "summary": {
+  "task": "line_retrieval",
+  "method": "full",
+  "method_kw": {
+   "bits": 2,
+   "group": 128,
+   "sink": 128,
+   "varn_iters": 8,
+   "rtn_quantile": 0.0,
+   "budget": 1024,
+   "window": 128,
+   "skvq_clip": 0.92,
+   "skvq_fp8": false,
+   "reorder_file": null
+  },
+  "n": 5,
+  "max_new": 32,
+  "gen_kwargs": {
+   "do_sample": true,
+   "temperature": 0.6,
+   "top_p": 0.9
+  },
+  "acc": 0.0,
+  "wall_s": 3.265550374984741,
+  "lines": 100,
+  "model": "/mnt/new1t/models/Meta-Llama-3___1-8B/"
+ },
+ "bits_report": {
+  "bpe_k": 16.0,
+  "bpe_v": 16.0,
+  "fp16_eq_tokens_per_head": null
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "lines": 100,
+    "k": 87
+   },
+   "answer": "6EJMB4C3UM",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1304,
+   "gen_text": "This puzzle is based on the following: https://www.puzzling.com/external/7a4e4c7"
+  },
+  {
+   "i": 1,
+   "meta": {
+    "lines": 100,
+    "k": 76
+   },
+   "answer": "TWPMN16S86",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1294,
+   "gen_text": "# Solution:\n\nThe solution for the cutting knowledge riddle is to find the code o"
+  },
+  {
+   "i": 2,
+   "meta": {
+    "lines": 100,
+    "k": 88
+   },
+   "answer": "HWN95OSJHJ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1309,
+   "gen_text": "Cutting Knowledge Date: December 2023\nToday Date: 26 Jul 2024\n\nBelow is a list o"
+  },
+  {
+   "i": 3,
+   "meta": {
+    "lines": 100,
+    "k": 99
+   },
+   "answer": "IYMI7X20BX",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1321,
+   "gen_text": "Your answer is incorrect.\n\nYour answer is incorrect.\n\nYour answer is incorrect.\n"
+  },
+  {
+   "i": 4,
+   "meta": {
+    "lines": 100,
+    "k": 27
+   },
+   "answer": "19UYCU84JO",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1270,
+   "gen_text": "# Cutting Knowledge Date: December 2023\n\nToday Date: 26 Jul 2024\n\nmployee ID: 8I"
+  }
+ ]
+}
