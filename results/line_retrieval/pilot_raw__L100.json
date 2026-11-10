@@ -1,0 +1,271 @@
+{
+ "summary": {
+  "task": "line_retrieval",
+  "method": "full",
+  "method_kw": {
+   "bits": 2,
+   "group": 128,
+   "sink": 128,
+   "varn_iters": 8
+  },
+  "n": 20,
+  "max_new": 32,
+  "gen_kwargs": {
+   "do_sample": true,
+   "temperature": 0.7,
+   "top_p": 0.8,
+   "top_k": 20
+  },
+  "acc": 0.15,
+  "wall_s": 10.105445861816406,
+  "lines": 100,
+  "model": "Qwen/Qwen3-4B"
+ },
+ "bits_report": {
+  "bpe_k": 16.0,
+  "bpe_v": 16.0,
+  "fp16_eq_tokens_per_head": null
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "lines": 100,
+    "k": 87
+   },
+   "answer": "6EJMB4C3UM",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1441,
+   "gen_text": " Also, please make sure that the code is correct, and that it is not a typo.\nThe"
+  },
+  {
+   "i": 1,
+   "meta": {
+    "lines": 100,
+    "k": 76
+   },
+   "answer": "TWPMN16S86",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1423,
+   "gen_text": " Also, make sure that it is in the correct order, and that the code is the one o"
+  },
+  {
+   "i": 2,
+   "meta": {
+    "lines": 100,
+    "k": 88
+   },
+   "answer": "HWN95OSJHJ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1441,
+   "gen_text": " Also, make sure the code is in the correct order. (The code is not the line num"
+  },
+  {
+   "i": 3,
+   "meta": {
+    "lines": 100,
+    "k": 99
+   },
+   "answer": "IYMI7X20BX",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1461,
+   "gen_text": " Also, make sure that the code is in the correct order. Let me know if there is "
+  },
+  {
+   "i": 4,
+   "meta": {
+    "lines": 100,
+    "k": 27
+   },
+   "answer": "19UYCU84JO",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1401,
+   "gen_text": " I will give you a 10-character code as a response. I will not give you any othe"
+  },
+  {
+   "i": 5,
+   "meta": {
+    "lines": 100,
+    "k": 90
+   },
+   "answer": "YXFQ4B8VGX",
+   "pred": "YXFQ4B8VGX",
+   "correct": true,
+   "n_prompt_tokens": 1434,
+   "gen_text": " So, just the code, no explanations, no other text. Just the code.\nYXFQ4B8VGX\nTh"
+  },
+  {
+   "i": 6,
+   "meta": {
+    "lines": 100,
+    "k": 79
+   },
+   "answer": "B79B6RIOIU",
+   "pred": "B79B6RIOIU",
+   "correct": true,
+   "n_prompt_tokens": 1415,
+   "gen_text": " The answer is: B79B6RIOIU\nOkay, let's see. The user provided a list of 100 line"
+  },
+  {
+   "i": 7,
+   "meta": {
+    "lines": 100,
+    "k": 14
+   },
+   "answer": "YCW20NWRS5",
+   "pred": "YCW20NWRS5",
+   "correct": true,
+   "n_prompt_tokens": 1408,
+   "gen_text": " Also, check that the code on line 14 is correct.\nThe code on line 14 is YCW20NW"
+  },
+  {
+   "i": 8,
+   "meta": {
+    "lines": 100,
+    "k": 8
+   },
+   "answer": "H9UFH5BCO7",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1421,
+   "gen_text": " Also, the code is in the format of a string, not a number, so be sure to includ"
+  },
+  {
+   "i": 9,
+   "meta": {
+    "lines": 100,
+    "k": 87
+   },
+   "answer": "JT57Z7TORK",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1441,
+   "gen_text": " The code is on line 87. The code is on line 87.\n\nThe code on line 87 is **JT57Z"
+  },
+  {
+   "i": 10,
+   "meta": {
+    "lines": 100,
+    "k": 47
+   },
+   "answer": "FDW59VGXFQ",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1425,
+   "gen_text": " To find the code on line 47, I need to look at the list of lines provided and l"
+  },
+  {
+   "i": 11,
+   "meta": {
+    "lines": 100,
+    "k": 54
+   },
+   "answer": "XCBUCSQUX5",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1448,
+   "gen_text": " Let me know if you need clarification.\n\nOkay, let's see. The user provided a li"
+  },
+  {
+   "i": 12,
+   "meta": {
+    "lines": 100,
+    "k": 43
+   },
+   "answer": "1I6CLAD8Q2",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1437,
+   "gen_text": " The code on line 43 is: \n\nTo determine the code on line 43, we need to refer to"
+  },
+  {
+   "i": 13,
+   "meta": {
+    "lines": 100,
+    "k": 54
+   },
+   "answer": "ROM8PXNSDF",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1421,
+   "gen_text": " Also, line numbers are from 1 to 100. So line 54 is the one you need to find.\n\n"
+  },
+  {
+   "i": 14,
+   "meta": {
+    "lines": 100,
+    "k": 44
+   },
+   "answer": "0U6HBP17S9",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1420,
+   "gen_text": " Also, note that the codes are not in order.\nOkay, let's see. The user provided "
+  },
+  {
+   "i": 15,
+   "meta": {
+    "lines": 100,
+    "k": 40
+   },
+   "answer": "4JRBN4GGRN",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1432,
+   "gen_text": " The code is in the list above.\n\nOkay, let's see. The user provided a list of 10"
+  },
+  {
+   "i": 16,
+   "meta": {
+    "lines": 100,
+    "k": 36
+   },
+   "answer": "N611467MT5",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1408,
+   "gen_text": " So, just the code.\nOkay, let's see. The user provided a list of 100 lines, each"
+  },
+  {
+   "i": 17,
+   "meta": {
+    "lines": 100,
+    "k": 75
+   },
+   "answer": "WKWYB1C6SS",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1408,
+   "gen_text": " Also, make sure that the code is in the correct order. The code is not in the o"
+  },
+  {
+   "i": 18,
+   "meta": {
+    "lines": 100,
+    "k": 100
+   },
+   "answer": "AMWBWP85HP",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1437,
+   "gen_text": " Also, check for any possible typos in the code. Also, check for any possible ty"
+  },
+  {
+   "i": 19,
+   "meta": {
+    "lines": 100,
+    "k": 53
+   },
+   "answer": "T507JOOP0E",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 1427,
+   "gen_text": " I will check if it is correct.\nOkay, let's see. The user provided a list of 100"
+  }
+ ]
+}

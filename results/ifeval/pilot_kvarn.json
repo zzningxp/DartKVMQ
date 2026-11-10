@@ -1,0 +1,521 @@
+{
+ "summary": {
+  "task": "ifeval",
+  "method": "kvarn",
+  "method_kw": {
+   "bits": 2,
+   "group": 128,
+   "sink": 32,
+   "varn_iters": 8,
+   "rtn_quantile": 0.0
+  },
+  "n": 20,
+  "max_new": 1280,
+  "gen_kwargs": {
+   "do_sample": false
+  },
+  "acc": 0.75,
+  "wall_s": 76.1238660812378,
+  "acc_loose": 0.8,
+  "model": "Qwen/Qwen3-4B"
+ },
+ "bits_report": {
+  "bpe_k": 2.25,
+  "bpe_v": 2.25,
+  "fp16_eq_tokens_per_head": null
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "key": 1000,
+    "instruction_id_list": [
+     "punctuation:no_comma",
+     "detectable_format:number_highlighted_sections",
+     "length_constraints:number_words"
+    ],
+    "kwargs": [
+     {},
+     {
+      "num_highlights": 3
+     },
+     {
+      "relation": "at least",
+      "num_words": 300
+     }
+    ]
+   },
+   "answer": null,
+   "pred": "3/3",
+   "correct": true,
+   "n_prompt_tokens": 89,
+   "gen_text": "Raymond III Count of Tripoli was a prominent figure in the Crusader states durin",
+   "loose": true,
+   "follow_list": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "i": 1,
+   "meta": {
+    "key": 1001,
+    "instruction_id_list": [
+     "punctuation:no_comma"
+    ],
+    "kwargs": [
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 50,
+   "gen_text": "O noble traveler whose heart doth yearn  \nTo wander through the land of cherry b",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 2,
+   "meta": {
+    "key": 1005,
+    "instruction_id_list": [
+     "detectable_content:number_placeholders"
+    ],
+    "kwargs": [
+     {
+      "num_placeholders": 12
+     }
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 51,
+   "gen_text": "**[Name]**  \n[Address]  \n[Phone Number] | [Email Address] | [LinkedIn Profile] |",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 3,
+   "meta": {
+    "key": 1012,
+    "instruction_id_list": [
+     "combination:repeat_prompt",
+     "detectable_format:title"
+    ],
+    "kwargs": [
+     {
+      "prompt_to_repeat": "Write an email to my boss telling him that I am quitting. The email must contain a title wrapped in double angular brackets, i.e. <<title>>."
+     },
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "2/2",
+   "correct": true,
+   "n_prompt_tokens": 88,
+   "gen_text": "Write an email to my boss telling him that I am quitting. The email must contain",
+   "loose": true,
+   "follow_list": [
+    true,
+    true
+   ]
+  },
+  {
+   "i": 4,
+   "meta": {
+    "key": 1019,
+    "instruction_id_list": [
+     "change_case:english_lowercase"
+    ],
+    "kwargs": [
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 52,
+   "gen_text": "what are the two young boys doing with toy guns and horns?",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 5,
+   "meta": {
+    "key": 102,
+    "instruction_id_list": [
+     "detectable_format:number_bullet_lists"
+    ],
+    "kwargs": [
+     {
+      "num_bullets": 3
+     }
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 85,
+   "gen_text": "* The woman in the ball gown adjusts her corset with a confident smile, while th",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 6,
+   "meta": {
+    "key": 1021,
+    "instruction_id_list": [
+     "change_case:english_capital",
+     "detectable_format:multiple_sections"
+    ],
+    "kwargs": [
+     {},
+     {
+      "section_spliter": "PARAGRAPH",
+      "num_sections": 2
+     }
+    ]
+   },
+   "answer": null,
+   "pred": "2/2",
+   "correct": true,
+   "n_prompt_tokens": 54,
+   "gen_text": "PARAGRAPH 1  \nTHE SENTENCE \"IF THE LAW IS BAD, YOU SHOULD NOT FOLLOW IT\" IS A SI",
+   "loose": true,
+   "follow_list": [
+    true,
+    true
+   ]
+  },
+  {
+   "i": 7,
+   "meta": {
+    "key": 1040,
+    "instruction_id_list": [
+     "change_case:capital_word_frequency",
+     "change_case:capital_word_frequency",
+     "startend:quotation"
+    ],
+    "kwargs": [
+     {
+      "capital_relation": "less than",
+      "capital_frequency": 10
+     },
+     {
+      "capital_relation": "at least",
+      "capital_frequency": 1
+     },
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "2/3",
+   "correct": false,
+   "n_prompt_tokens": 58,
+   "gen_text": "\"MATTHIAS ALGIERS  \nPROFESSIONAL SUMMARY  \nMATTHIAS ALGIERS is a dynamic and res",
+   "loose": false,
+   "follow_list": [
+    false,
+    true,
+    true
+   ]
+  },
+  {
+   "i": 8,
+   "meta": {
+    "key": 1051,
+    "instruction_id_list": [
+     "change_case:english_lowercase"
+    ],
+    "kwargs": [
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 29,
+   "gen_text": "dear friend,  \n\ni hope you're doing well. i just wanted to ask you something imp",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 9,
+   "meta": {
+    "key": 1069,
+    "instruction_id_list": [
+     "keywords:existence",
+     "length_constraints:number_words",
+     "punctuation:no_comma"
+    ],
+    "kwargs": [
+     {
+      "keywords": [
+       "correlated",
+       "experiencing"
+      ]
+     },
+     {
+      "relation": "at least",
+      "num_words": 500
+     },
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "2/3",
+   "correct": false,
+   "n_prompt_tokens": 59,
+   "gen_text": "Subject: Invitation to Join Our Upcoming Meeting\n\nDear [Participant Name]\n\nI hop",
+   "loose": false,
+   "follow_list": [
+    true,
+    false,
+    true
+   ]
+  },
+  {
+   "i": 10,
+   "meta": {
+    "key": 1072,
+    "instruction_id_list": [
+     "length_constraints:number_words"
+    ],
+    "kwargs": [
+     {
+      "relation": "at least",
+      "num_words": 400
+     }
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 34,
+   "gen_text": "**The Benefits of Sleeping in a Hammock: A Cozy and Restorative Alternative**\n\nI",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 11,
+   "meta": {
+    "key": 1075,
+    "instruction_id_list": [
+     "detectable_format:json_format"
+    ],
+    "kwargs": [
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "0/1",
+   "correct": false,
+   "n_prompt_tokens": 47,
+   "gen_text": "Sure! Here's a sample advertisement for a new comfortable diaper in JSON format:",
+   "loose": true,
+   "follow_list": [
+    false
+   ]
+  },
+  {
+   "i": 12,
+   "meta": {
+    "key": 1082,
+    "instruction_id_list": [
+     "length_constraints:number_paragraphs"
+    ],
+    "kwargs": [
+     {
+      "num_paragraphs": 2
+     }
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 47,
+   "gen_text": "James opened his eyes to the familiar scent of rain and the soft hum of a distan",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 13,
+   "meta": {
+    "key": 1087,
+    "instruction_id_list": [
+     "change_case:english_lowercase"
+    ],
+    "kwargs": [
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "0/1",
+   "correct": false,
+   "n_prompt_tokens": 41,
+   "gen_text": "the social network is a gripping and intense film that delves deep into the crea",
+   "loose": false,
+   "follow_list": [
+    false
+   ]
+  },
+  {
+   "i": 14,
+   "meta": {
+    "key": 1092,
+    "instruction_id_list": [
+     "length_constraints:number_words"
+    ],
+    "kwargs": [
+     {
+      "relation": "less than",
+      "num_words": 300
+     }
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 31,
+   "gen_text": "A recent trip to Japan was a journey of discovery, culture, and quiet beauty. Fr",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 15,
+   "meta": {
+    "key": 1094,
+    "instruction_id_list": [
+     "detectable_format:json_format"
+    ],
+    "kwargs": [
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 47,
+   "gen_text": "{\n  \"famous_moms\": [\n    {\n      \"name\": \"Mama Mia\",\n      \"title\": \"The Queen o",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 16,
+   "meta": {
+    "key": 1098,
+    "instruction_id_list": [
+     "combination:two_responses"
+    ],
+    "kwargs": [
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 41,
+   "gen_text": "Almighty  \n******  \nThe Creator",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 17,
+   "meta": {
+    "key": 1107,
+    "instruction_id_list": [
+     "punctuation:no_comma",
+     "combination:two_responses"
+    ],
+    "kwargs": [
+     {},
+     {}
+    ]
+   },
+   "answer": null,
+   "pred": "2/2",
+   "correct": true,
+   "n_prompt_tokens": 40,
+   "gen_text": "Why did the rocket get a promotion? It was always on top of its game.  \n******  ",
+   "loose": true,
+   "follow_list": [
+    true,
+    true
+   ]
+  },
+  {
+   "i": 18,
+   "meta": {
+    "key": 1108,
+    "instruction_id_list": [
+     "language:response_language"
+    ],
+    "kwargs": [
+     {
+      "language": "kn"
+     }
+    ]
+   },
+   "answer": null,
+   "pred": "1/1",
+   "correct": true,
+   "n_prompt_tokens": 32,
+   "gen_text": "\u0cb9\u0cbe\u0cae\u0ccd\u0cac\u0cb0\u0ccd\u0c97\u0cb0\u0ccd\u0c97\u0cb3\u0cc1 \u0cb8\u0cbe\u0c82\u0ca6\u0ccd\u0cb0\u0cbf\u0ca4\u0c97\u0cca\u0cb3\u0ccd\u0cb3\u0cc1\u0cb5 \u0cae\u0cbe\u0ca4\u0cc1\u0c97\u0cb3\u0cc1.",
+   "loose": true,
+   "follow_list": [
+    true
+   ]
+  },
+  {
+   "i": 19,
+   "meta": {
+    "key": 1122,
+    "instruction_id_list": [
+     "change_case:english_lowercase",
+     "keywords:letter_frequency"
+    ],
+    "kwargs": [
+     {},
+     {
+      "let_relation": "at least",
+      "letter": "#",
+      "let_frequency": 4
+     }
+    ]
+   },
+   "answer": null,
+   "pred": "1/2",
+   "correct": false,
+   "n_prompt_tokens": 36,
+   "gen_text": "sipping on a martini, feeling the vibe, and embracing the wild side. \ud83e\udd43\u2728 #playboy",
+   "loose": false,
+   "follow_list": [
+    true,
+    false
+   ]
+  }
+ ]
+}

@@ -1,0 +1,19 @@
+# Datasets (350M+, download via scripts instead)
+data/
+
+# Third-party code extracted from archives (KVarN, tarballs)
+external/
+
+# Third-party paper PDFs (9.4M, copyright — remove this line if you want them tracked)
+papers/
+
+# Local tool state
+.claude/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Environments / OS
+.venv/
+.DS_Store

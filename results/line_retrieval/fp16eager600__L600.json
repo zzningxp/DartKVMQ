@@ -1,0 +1,124 @@
+{
+ "summary": {
+  "task": "line_retrieval",
+  "method": "full",
+  "method_kw": {
+   "bits": 2,
+   "group": 128,
+   "sink": 128,
+   "varn_iters": 8
+  },
+  "n": 8,
+  "max_new": 32,
+  "gen_kwargs": {
+   "do_sample": false
+  },
+  "acc": 0.75,
+  "wall_s": 21.556377410888672,
+  "lines": 600,
+  "model": "Qwen/Qwen3-4B"
+ },
+ "bits_report": {
+  "bpe_k": 16.0,
+  "bpe_v": 16.0,
+  "fp16_eq_tokens_per_head": null
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "lines": 600,
+    "k": 264
+   },
+   "answer": "J5O23RN58R",
+   "pred": "J5O23RN58R",
+   "correct": true,
+   "n_prompt_tokens": 8910,
+   "gen_text": "J5O23RN58R"
+  },
+  {
+   "i": 1,
+   "meta": {
+    "lines": 600,
+    "k": 311
+   },
+   "answer": "P3H7WU5LD9",
+   "pred": "QW89W63CLO",
+   "correct": false,
+   "n_prompt_tokens": 8905,
+   "gen_text": "QW89W63CLO"
+  },
+  {
+   "i": 2,
+   "meta": {
+    "lines": 600,
+    "k": 72
+   },
+   "answer": "XB3IC2DZ9L",
+   "pred": "XB3IC2DZ9L",
+   "correct": true,
+   "n_prompt_tokens": 8833,
+   "gen_text": "XB3IC2DZ9L"
+  },
+  {
+   "i": 3,
+   "meta": {
+    "lines": 600,
+    "k": 178
+   },
+   "answer": "6PYX933P1T",
+   "pred": "6PYX933P1T",
+   "correct": true,
+   "n_prompt_tokens": 8925,
+   "gen_text": "6PYX933P1T"
+  },
+  {
+   "i": 4,
+   "meta": {
+    "lines": 600,
+    "k": 340
+   },
+   "answer": "1PYMC0BXO4",
+   "pred": "1PYMC0BXO4",
+   "correct": true,
+   "n_prompt_tokens": 8859,
+   "gen_text": "1PYMC0BXO4"
+  },
+  {
+   "i": 5,
+   "meta": {
+    "lines": 600,
+    "k": 144
+   },
+   "answer": "TPZ2FUD779",
+   "pred": "TPZ2FUD779",
+   "correct": true,
+   "n_prompt_tokens": 8896,
+   "gen_text": "TPZ2FUD779"
+  },
+  {
+   "i": 6,
+   "meta": {
+    "lines": 600,
+    "k": 266
+   },
+   "answer": "1BTKOLXTC3",
+   "pred": "5KW8CX98Q7",
+   "correct": false,
+   "n_prompt_tokens": 8932,
+   "gen_text": "5KW8CX98Q7"
+  },
+  {
+   "i": 7,
+   "meta": {
+    "lines": 600,
+    "k": 439
+   },
+   "answer": "5X7MYEV5TR",
+   "pred": "5X7MYEV5TR",
+   "correct": true,
+   "n_prompt_tokens": 8837,
+   "gen_text": "5X7MYEV5TR"
+  }
+ ]
+}

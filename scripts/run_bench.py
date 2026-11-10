@@ -1,0 +1,167 @@
+"""Benchmark CLI.
+
+Examples (always run with CUDA_VISIBLE_DEVICES=1, HF mirror):
+  python scripts/run_bench.py --model Qwen/Qwen3-4B --method kvarn \
+      --task line_retrieval --lines 100 200 300 400 500 600 --n 100
+  python scripts/run_bench.py --model Qwen/Qwen3-4B --method full \
+      --task line_retrieval --lines 100 200 --n 20 --tag pilot
+"""
+import argparse
+import os
+import pathlib
+import sys
+
+os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "1")
+# eager attention at long contexts needs the fp32 softmax tile + weights to
+# coexist; expandable segments avoids fragmentation OOM
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "src"))
+
+import torch  # noqa: E402
+from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: E402
+
+from dartkv.bench import run_task, save_report, build_prompt  # noqa: E402
+from dartkv.tasks.ifeval import IFEvalTask  # noqa: E402
+from dartkv.tasks.line_retrieval import LineRetrievalTask  # noqa: E402
+
+
+class RawPrompter:
+    """Bypass the chat template (paper prompts may be raw completions)."""
+
+    def __call__(self, tokenizer, user_text):
+        return user_text
+
+
+class ChatPrompter:
+    def __call__(self, tokenizer, user_text):
+        return build_prompt(tokenizer, user_text)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", required=True)
+    ap.add_argument("--method", default="full",
+                    choices=["full", "kivi", "kvarn", "kvarn_h", "rdkv"])
+    ap.add_argument("--task", default="line_retrieval",
+                    choices=["line_retrieval", "ifeval", "longbench"])
+    ap.add_argument("--datasets", type=str, nargs="+", default=None,
+                    help="longbench dataset names (default: EN16)")
+    ap.add_argument("--max-len", type=int, default=32768,
+                    help="longbench middle-truncation token budget")
+    ap.add_argument("--lines", type=int, nargs="+",
+                    default=[100, 200, 300, 400, 500, 600])
+    ap.add_argument("--n", type=int, default=100)
+    ap.add_argument("--max-new", type=int, default=32)
+    ap.add_argument("--bits", type=int, default=2)
+    ap.add_argument("--bits-k", type=int, default=None,
+                    help="bits for K only (ablation; defaults to --bits)")
+    ap.add_argument("--bits-v", type=int, default=None,
+                    help="bits for V only (ablation; defaults to --bits)")
+    ap.add_argument("--group", type=int, default=128)
+    ap.add_argument("--sink", type=int, default=128)
+    ap.add_argument("--varn-iters", type=int, default=8)
+    ap.add_argument("--rtn-quantile", type=float, default=0.0,
+                    help="KVarN percentile-range RTN q (official "
+                         "KVARN_RTN_QUANTILE; 0 = min/max like the paper)")
+    ap.add_argument("--budget", type=int, default=1024,
+                    help="RDKV budget n: FP16-equivalent tokens per layer "
+                         "(paper axis {64,128,256,512,1024,2048})")
+    ap.add_argument("--temperature", type=float, default=None)
+    ap.add_argument("--top-p", type=float, default=None)
+    ap.add_argument("--top-k", type=int, default=None)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--task-seed", type=int, default=20260604)
+    ap.add_argument("--tag", default=None)
+    ap.add_argument("--no-chat", action="store_true",
+                    help="raw completion prompt (skip chat template)")
+    ap.add_argument("--greedy", action="store_true",
+                    help="force do_sample=False (true greedy)")
+    ap.add_argument("--dtype", default="bfloat16",
+                    choices=["bfloat16", "float16", "float32"],
+                    help="model load dtype (default bfloat16)")
+    ap.add_argument("--attn", default="sdpa",
+                    choices=["sdpa", "eager", "flex"])
+    ap.add_argument("--out", default=None)
+    args = ap.parse_args()
+
+    if args.greedy:
+        gen_over = dict(temperature=None, top_p=None, top_k=None,
+                        greedy=True)
+    else:
+        gen_over = dict(temperature=args.temperature, top_p=args.top_p,
+                        top_k=args.top_k)
+    prompter = RawPrompter() if args.no_chat else ChatPrompter()
+
+    tok = AutoTokenizer.from_pretrained(args.model)
+    dtype = {"bfloat16": torch.bfloat16, "float16": torch.float16,
+             "float32": torch.float32}[args.dtype]
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model, dtype=dtype, device_map="cuda",
+        attn_implementation=args.attn)
+    model.eval()
+    print(f"model {args.model} on {model.device}")
+
+    method_kw = dict(bits=args.bits, group=args.group, sink=args.sink,
+                     varn_iters=args.varn_iters,
+                     rtn_quantile=args.rtn_quantile, budget=args.budget)
+    if args.bits_k is not None or args.bits_v is not None:
+        # K/V asymmetric ablation: make_method takes bits (mean) for
+        # dispatch; pass through explicit kwargs for methods that accept them
+        bk = args.bits_k if args.bits_k is not None else args.bits
+        bv = args.bits_v if args.bits_v is not None else args.bits
+        method_kw = dict(bits=bk, bits_v=bv, bits_k=bk, group=args.group,
+                         sink=args.sink, varn_iters=args.varn_iters,
+                         rtn_quantile=args.rtn_quantile, budget=args.budget)
+    out_dir = args.out or os.path.join("results", args.task)
+
+    if args.task == "ifeval":
+        runs = [("all", IFEvalTask())]
+    elif args.task == "longbench":
+        from dartkv.tasks.longbench import EN16, LongBenchTask
+        lb = []
+        for ds in (args.datasets or EN16):
+            t = LongBenchTask(dataset=ds, max_len=args.max_len)
+            t.set_tokenizer(tok)
+            lb.append((ds, t))
+        runs = lb
+    else:
+        runs = [(L, LineRetrievalTask(lines=L, seed=args.task_seed))
+                for L in args.lines]
+
+    for L, task in runs:
+        print(f"== task={args.task} L={L} method={args.method} "
+              f"n={args.n}", flush=True)
+        max_new = (task.max_gen if args.task == "longbench"
+                   else args.max_new)
+        lb_prompter = (RawPrompter() if args.task == "longbench"
+                       and not task.needs_chat else None)
+        run_prompter = lb_prompter or prompter
+        report = run_task(model, tok, task, args.method, n=args.n,
+                          max_new=max_new, gen_over=gen_over,
+                          seed=args.seed, method_kw=method_kw,
+                          prompter=run_prompter)
+        if args.task == "line_retrieval":
+            report["summary"]["lines"] = L
+        if args.task == "longbench":
+            report["summary"]["dataset"] = L
+        report["summary"]["model"] = args.model
+        if args.tag:
+            tag = f"{args.tag}__L{L}" if args.task == "line_retrieval" \
+                else (f"{args.tag}__{L}" if args.task == "longbench"
+                      else args.tag)
+        else:
+            tag = f"{args.model.split('/')[-1]}__{args.method}__{args.task}"
+            if args.method == "rdkv":
+                tag += f"__n{args.budget}"
+            elif args.method != "full":
+                tag += f"__k{args.bits}v{args.bits}"
+        save_report(report, args.model, out_dir, tag=tag)
+        accs = [f"acc={report['summary']['acc']:.3f}"]
+        if "acc_loose" in report["summary"]:
+            accs.append(f"loose={report['summary']['acc_loose']:.3f}")
+        print(f"   {' '.join(accs)}", flush=True)
+
+
+if __name__ == "__main__":
+    main()

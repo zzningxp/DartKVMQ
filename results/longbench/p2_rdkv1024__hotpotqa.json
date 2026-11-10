@@ -1,0 +1,1031 @@
+{
+ "summary": {
+  "task": "longbench",
+  "method": "rdkv",
+  "method_kw": {
+   "bits": 2,
+   "group": 128,
+   "sink": 128,
+   "varn_iters": 8,
+   "rtn_quantile": 0.0,
+   "budget": 1024
+  },
+  "n": 50,
+  "max_new": 32,
+  "gen_kwargs": {
+   "do_sample": false
+  },
+  "acc": 0.4963656898656899,
+  "wall_s": 208.8783736228943,
+  "dataset": "hotpotqa",
+  "model": "Qwen/Qwen3-4B"
+ },
+ "bits_report": {
+  "bpe_k": 0.528150675203922,
+  "bpe_v": 0.06603893093559307,
+  "fp16_eq_tokens_per_head": 1024.0,
+  "retention": 0.32899030410188956
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 0,
+    "length": 8616,
+    "all_classes": null,
+    "answers": [
+     "Miller v. California"
+    ]
+   },
+   "answer": [
+    "Miller v. California"
+   ],
+   "pred": "Gates v. Collier",
+   "correct": 0.3333333333333333,
+   "n_prompt_tokens": 11770,
+   "gen_text": "Gates v. Collier",
+   "score": 0.3333333333333333
+  },
+  {
+   "i": 1,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 1,
+    "length": 11525,
+    "all_classes": null,
+    "answers": [
+     "Charles L. Clifford"
+    ]
+   },
+   "answer": [
+    "Charles L. Clifford"
+   ],
+   "pred": "Charles L. Clifford",
+   "correct": 1.0,
+   "n_prompt_tokens": 17305,
+   "gen_text": "Charles L. Clifford",
+   "score": 1.0
+  },
+  {
+   "i": 2,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 2,
+    "length": 11935,
+    "all_classes": null,
+    "answers": [
+     "Norman"
+    ]
+   },
+   "answer": [
+    "Norman"
+   ],
+   "pred": "Norman",
+   "correct": 1.0,
+   "n_prompt_tokens": 17371,
+   "gen_text": "Norman",
+   "score": 1.0
+  },
+  {
+   "i": 3,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 3,
+    "length": 11879,
+    "all_classes": null,
+    "answers": [
+     "Sun"
+    ]
+   },
+   "answer": [
+    "Sun"
+   ],
+   "pred": "Jupiter",
+   "correct": 0.0,
+   "n_prompt_tokens": 16747,
+   "gen_text": "Jupiter",
+   "score": 0.0
+  },
+  {
+   "i": 4,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 4,
+    "length": 9865,
+    "all_classes": null,
+    "answers": [
+     "erotic thriller film"
+    ]
+   },
+   "answer": [
+    "erotic thriller film"
+   ],
+   "pred": "film",
+   "correct": 0.5,
+   "n_prompt_tokens": 15153,
+   "gen_text": "film",
+   "score": 0.5
+  },
+  {
+   "i": 5,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 5,
+    "length": 10034,
+    "all_classes": null,
+    "answers": [
+     "Parliament"
+    ]
+   },
+   "answer": [
+    "Parliament"
+   ],
+   "pred": "MP",
+   "correct": 0.0,
+   "n_prompt_tokens": 15733,
+   "gen_text": "MP",
+   "score": 0.0
+  },
+  {
+   "i": 6,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 6,
+    "length": 9438,
+    "all_classes": null,
+    "answers": [
+     "Tharangambadi"
+    ]
+   },
+   "answer": [
+    "Tharangambadi"
+   ],
+   "pred": "Thirukkalacherry is a village in the Indian town of Tharangambadi.",
+   "correct": 0.2222222222222222,
+   "n_prompt_tokens": 16111,
+   "gen_text": "Thirukkalacherry is a village in the Indian town of Tharangambadi.",
+   "score": 0.2222222222222222
+  },
+  {
+   "i": 7,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 7,
+    "length": 1267,
+    "all_classes": null,
+    "answers": [
+     "Pleiospilos"
+    ]
+   },
+   "answer": [
+    "Pleiospilos"
+   ],
+   "pred": "Pleiospilos",
+   "correct": 1.0,
+   "n_prompt_tokens": 2300,
+   "gen_text": "Pleiospilos",
+   "score": 1.0
+  },
+  {
+   "i": 8,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 8,
+    "length": 7877,
+    "all_classes": null,
+    "answers": [
+     "2013"
+    ]
+   },
+   "answer": [
+    "2013"
+   ],
+   "pred": "2013",
+   "correct": 1.0,
+   "n_prompt_tokens": 13252,
+   "gen_text": "2013",
+   "score": 1.0
+  },
+  {
+   "i": 9,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 9,
+    "length": 6021,
+    "all_classes": null,
+    "answers": [
+     "The Rebirth"
+    ]
+   },
+   "answer": [
+    "The Rebirth"
+   ],
+   "pred": "Angel Nation",
+   "correct": 0.0,
+   "n_prompt_tokens": 9258,
+   "gen_text": "Angel Nation",
+   "score": 0.0
+  },
+  {
+   "i": 10,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 10,
+    "length": 12090,
+    "all_classes": null,
+    "answers": [
+     "October 13, 1980"
+    ]
+   },
+   "answer": [
+    "October 13, 1980"
+   ],
+   "pred": "October 13, 1980",
+   "correct": 1.0,
+   "n_prompt_tokens": 16884,
+   "gen_text": "October 13, 1980",
+   "score": 1.0
+  },
+  {
+   "i": 11,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 11,
+    "length": 11381,
+    "all_classes": null,
+    "answers": [
+     "Betty Cohen"
+    ]
+   },
+   "answer": [
+    "Betty Cohen"
+   ],
+   "pred": "Ted Turner",
+   "correct": 0.0,
+   "n_prompt_tokens": 16690,
+   "gen_text": "Ted Turner",
+   "score": 0.0
+  },
+  {
+   "i": 12,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 12,
+    "length": 11127,
+    "all_classes": null,
+    "answers": [
+     "Mary Astor"
+    ]
+   },
+   "answer": [
+    "Mary Astor"
+   ],
+   "pred": "Mary Astor",
+   "correct": 1.0,
+   "n_prompt_tokens": 16022,
+   "gen_text": "Mary Astor",
+   "score": 1.0
+  },
+  {
+   "i": 13,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 13,
+    "length": 6961,
+    "all_classes": null,
+    "answers": [
+     "number five"
+    ]
+   },
+   "answer": [
+    "number five"
+   ],
+   "pred": "Number five",
+   "correct": 1.0,
+   "n_prompt_tokens": 10891,
+   "gen_text": "Number five",
+   "score": 1.0
+  },
+  {
+   "i": 14,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 14,
+    "length": 11852,
+    "all_classes": null,
+    "answers": [
+     "New Zealand, Canada, the United States, the Falkland Islands, and Peru."
+    ]
+   },
+   "answer": [
+    "New Zealand, Canada, the United States, the Falkland Islands, and Peru."
+   ],
+   "pred": "Sri Lankan sambar deer, white-bellied musk deer, fallow deer, and elk.",
+   "correct": 0.09999999999999999,
+   "n_prompt_tokens": 16716,
+   "gen_text": "Sri Lankan sambar deer, white-bellied musk deer, fallow deer, and elk.",
+   "score": 0.09999999999999999
+  },
+  {
+   "i": 15,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 15,
+    "length": 8651,
+    "all_classes": null,
+    "answers": [
+     "2000 Summer Olympic Games"
+    ]
+   },
+   "answer": [
+    "2000 Summer Olympic Games"
+   ],
+   "pred": "2000 Summer Olympics",
+   "correct": 0.5714285714285715,
+   "n_prompt_tokens": 12998,
+   "gen_text": "2000 Summer Olympics",
+   "score": 0.5714285714285715
+  },
+  {
+   "i": 16,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 16,
+    "length": 4109,
+    "all_classes": null,
+    "answers": [
+     "Claudio Javier L\u00f3pez"
+    ]
+   },
+   "answer": [
+    "Claudio Javier L\u00f3pez"
+   ],
+   "pred": "Claudio L\u00f3pez",
+   "correct": 0.8,
+   "n_prompt_tokens": 6657,
+   "gen_text": "Claudio L\u00f3pez",
+   "score": 0.8
+  },
+  {
+   "i": 17,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 17,
+    "length": 12697,
+    "all_classes": null,
+    "answers": [
+     "George H. W. Bush"
+    ]
+   },
+   "answer": [
+    "George H. W. Bush"
+   ],
+   "pred": "Ronald Reagan",
+   "correct": 0.0,
+   "n_prompt_tokens": 16969,
+   "gen_text": "Ronald Reagan",
+   "score": 0.0
+  },
+  {
+   "i": 18,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 18,
+    "length": 10290,
+    "all_classes": null,
+    "answers": [
+     "\"Talk That Talk\""
+    ]
+   },
+   "answer": [
+    "\"Talk That Talk\""
+   ],
+   "pred": "We Found Love",
+   "correct": 0.0,
+   "n_prompt_tokens": 14577,
+   "gen_text": "We Found Love",
+   "score": 0.0
+  },
+  {
+   "i": 19,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 19,
+    "length": 11185,
+    "all_classes": null,
+    "answers": [
+     "Bob Dylan"
+    ]
+   },
+   "answer": [
+    "Bob Dylan"
+   ],
+   "pred": "George Harrison",
+   "correct": 0.0,
+   "n_prompt_tokens": 16078,
+   "gen_text": "George Harrison",
+   "score": 0.0
+  },
+  {
+   "i": 20,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 20,
+    "length": 8020,
+    "all_classes": null,
+    "answers": [
+     "Cartoon Cartoon Fridays"
+    ]
+   },
+   "answer": [
+    "Cartoon Cartoon Fridays"
+   ],
+   "pred": "Cartoon Cartoons",
+   "correct": 0.4,
+   "n_prompt_tokens": 11473,
+   "gen_text": "Cartoon Cartoons",
+   "score": 0.4
+  },
+  {
+   "i": 21,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 21,
+    "length": 9946,
+    "all_classes": null,
+    "answers": [
+     "on the Cumberland Plain"
+    ]
+   },
+   "answer": [
+    "on the Cumberland Plain"
+   ],
+   "pred": "New South Wales",
+   "correct": 0.0,
+   "n_prompt_tokens": 16145,
+   "gen_text": "New South Wales",
+   "score": 0.0
+  },
+  {
+   "i": 22,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 22,
+    "length": 3766,
+    "all_classes": null,
+    "answers": [
+     "Long Island"
+    ]
+   },
+   "answer": [
+    "Long Island"
+   ],
+   "pred": "Jones Beach Island",
+   "correct": 0.4,
+   "n_prompt_tokens": 5390,
+   "gen_text": "Jones Beach Island",
+   "score": 0.4
+  },
+  {
+   "i": 23,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 23,
+    "length": 8462,
+    "all_classes": null,
+    "answers": [
+     "PewDiePie"
+    ]
+   },
+   "answer": [
+    "PewDiePie"
+   ],
+   "pred": "PewDiePie",
+   "correct": 1.0,
+   "n_prompt_tokens": 11635,
+   "gen_text": "PewDiePie",
+   "score": 1.0
+  },
+  {
+   "i": 24,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 24,
+    "length": 10483,
+    "all_classes": null,
+    "answers": [
+     "It's Always Sunny in Philadelphia"
+    ]
+   },
+   "answer": [
+    "It's Always Sunny in Philadelphia"
+   ],
+   "pred": "The Young and the Restless",
+   "correct": 0.0,
+   "n_prompt_tokens": 14674,
+   "gen_text": "The Young and the Restless",
+   "score": 0.0
+  },
+  {
+   "i": 25,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 25,
+    "length": 6361,
+    "all_classes": null,
+    "answers": [
+     "#364"
+    ]
+   },
+   "answer": [
+    "#364"
+   ],
+   "pred": "455th",
+   "correct": 0.0,
+   "n_prompt_tokens": 9955,
+   "gen_text": "455th",
+   "score": 0.0
+  },
+  {
+   "i": 26,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 26,
+    "length": 11209,
+    "all_classes": null,
+    "answers": [
+     "Ribosomes"
+    ]
+   },
+   "answer": [
+    "Ribosomes"
+   ],
+   "pred": "ribosomes",
+   "correct": 1.0,
+   "n_prompt_tokens": 16614,
+   "gen_text": "ribosomes",
+   "score": 1.0
+  },
+  {
+   "i": 27,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 27,
+    "length": 5903,
+    "all_classes": null,
+    "answers": [
+     "Dracula"
+    ]
+   },
+   "answer": [
+    "Dracula"
+   ],
+   "pred": "Pistacia",
+   "correct": 0.0,
+   "n_prompt_tokens": 9909,
+   "gen_text": "Pistacia",
+   "score": 0.0
+  },
+  {
+   "i": 28,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 28,
+    "length": 2045,
+    "all_classes": null,
+    "answers": [
+     "Band-e Amir National Park"
+    ]
+   },
+   "answer": [
+    "Band-e Amir National Park"
+   ],
+   "pred": "Band-e-Amir National Park",
+   "correct": 0.5714285714285715,
+   "n_prompt_tokens": 3386,
+   "gen_text": "Band-e-Amir National Park",
+   "score": 0.5714285714285715
+  },
+  {
+   "i": 29,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 29,
+    "length": 11886,
+    "all_classes": null,
+    "answers": [
+     "University of Southern California"
+    ]
+   },
+   "answer": [
+    "University of Southern California"
+   ],
+   "pred": "University of Southern California",
+   "correct": 1.0,
+   "n_prompt_tokens": 17667,
+   "gen_text": "University of Southern California",
+   "score": 1.0
+  },
+  {
+   "i": 30,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 30,
+    "length": 12070,
+    "all_classes": null,
+    "answers": [
+     "7.2 million"
+    ]
+   },
+   "answer": [
+    "7.2 million"
+   ],
+   "pred": "12,817",
+   "correct": 0.0,
+   "n_prompt_tokens": 17085,
+   "gen_text": "12,817",
+   "score": 0.0
+  },
+  {
+   "i": 31,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 31,
+    "length": 10275,
+    "all_classes": null,
+    "answers": [
+     "A123 Systems, LLC"
+    ]
+   },
+   "answer": [
+    "A123 Systems, LLC"
+   ],
+   "pred": "A123 Systems",
+   "correct": 0.8,
+   "n_prompt_tokens": 15348,
+   "gen_text": "A123 Systems",
+   "score": 0.8
+  },
+  {
+   "i": 32,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 32,
+    "length": 9811,
+    "all_classes": null,
+    "answers": [
+     "143,372"
+    ]
+   },
+   "answer": [
+    "143,372"
+   ],
+   "pred": "15,678",
+   "correct": 0.0,
+   "n_prompt_tokens": 15089,
+   "gen_text": "15,678",
+   "score": 0.0
+  },
+  {
+   "i": 33,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 33,
+    "length": 11339,
+    "all_classes": null,
+    "answers": [
+     "Taoiseach of Ireland"
+    ]
+   },
+   "answer": [
+    "Taoiseach of Ireland"
+   ],
+   "pred": "Taoiseach",
+   "correct": 0.5,
+   "n_prompt_tokens": 16606,
+   "gen_text": "Taoiseach",
+   "score": 0.5
+  },
+  {
+   "i": 34,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 34,
+    "length": 9385,
+    "all_classes": null,
+    "answers": [
+     "Troy, Montana"
+    ]
+   },
+   "answer": [
+    "Troy, Montana"
+   ],
+   "pred": "Vegepet is not based in any city located in Lincoln County, Montana, United Stat",
+   "correct": 0.125,
+   "n_prompt_tokens": 14952,
+   "gen_text": "Vegepet is not based in any city located in Lincoln County, Montana, United Stat",
+   "score": 0.125
+  },
+  {
+   "i": 35,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 35,
+    "length": 11830,
+    "all_classes": null,
+    "answers": [
+     "Mika H\u00e4kkinen"
+    ]
+   },
+   "answer": [
+    "Mika H\u00e4kkinen"
+   ],
+   "pred": "Mika H\u00e4kkinen",
+   "correct": 1.0,
+   "n_prompt_tokens": 17086,
+   "gen_text": "Mika H\u00e4kkinen",
+   "score": 1.0
+  },
+  {
+   "i": 36,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 36,
+    "length": 11091,
+    "all_classes": null,
+    "answers": [
+     "Constantine"
+    ]
+   },
+   "answer": [
+    "Constantine"
+   ],
+   "pred": "Constantine",
+   "correct": 1.0,
+   "n_prompt_tokens": 16202,
+   "gen_text": "Constantine",
+   "score": 1.0
+  },
+  {
+   "i": 37,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 37,
+    "length": 9169,
+    "all_classes": null,
+    "answers": [
+     "George Balanchine"
+    ]
+   },
+   "answer": [
+    "George Balanchine"
+   ],
+   "pred": "Darci Kistler",
+   "correct": 0.0,
+   "n_prompt_tokens": 13989,
+   "gen_text": "Darci Kistler",
+   "score": 0.0
+  },
+  {
+   "i": 38,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 38,
+    "length": 11865,
+    "all_classes": null,
+    "answers": [
+     "Xcel Energy Inc."
+    ]
+   },
+   "answer": [
+    "Xcel Energy Inc."
+   ],
+   "pred": "Xcel Energy",
+   "correct": 0.8,
+   "n_prompt_tokens": 16965,
+   "gen_text": "Xcel Energy",
+   "score": 0.8
+  },
+  {
+   "i": 39,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 39,
+    "length": 11344,
+    "all_classes": null,
+    "answers": [
+     "Summer Magic"
+    ]
+   },
+   "answer": [
+    "Summer Magic"
+   ],
+   "pred": "Around the World in 80 Days",
+   "correct": 0.0,
+   "n_prompt_tokens": 16502,
+   "gen_text": "Around the World in 80 Days",
+   "score": 0.0
+  },
+  {
+   "i": 40,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 40,
+    "length": 8315,
+    "all_classes": null,
+    "answers": [
+     "Nobel Prize"
+    ]
+   },
+   "answer": [
+    "Nobel Prize"
+   ],
+   "pred": "Nobel Prize in Physics",
+   "correct": 0.6666666666666666,
+   "n_prompt_tokens": 16618,
+   "gen_text": "Nobel Prize in Physics",
+   "score": 0.6666666666666666
+  },
+  {
+   "i": 41,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 41,
+    "length": 11635,
+    "all_classes": null,
+    "answers": [
+     "seasonal television specials, particularly its work in stop motion animation"
+    ]
+   },
+   "answer": [
+    "seasonal television specials, particularly its work in stop motion animation"
+   ],
+   "pred": "Stop motion animation",
+   "correct": 0.4615384615384615,
+   "n_prompt_tokens": 16681,
+   "gen_text": "Stop motion animation",
+   "score": 0.4615384615384615
+  },
+  {
+   "i": 42,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 42,
+    "length": 8515,
+    "all_classes": null,
+    "answers": [
+     "Dame Eileen June Atkins"
+    ]
+   },
+   "answer": [
+    "Dame Eileen June Atkins"
+   ],
+   "pred": "Eileen Atkins",
+   "correct": 0.6666666666666666,
+   "n_prompt_tokens": 12814,
+   "gen_text": "Eileen Atkins",
+   "score": 0.6666666666666666
+  },
+  {
+   "i": 43,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 43,
+    "length": 11577,
+    "all_classes": null,
+    "answers": [
+     "Iran"
+    ]
+   },
+   "answer": [
+    "Iran"
+   ],
+   "pred": "Iran",
+   "correct": 1.0,
+   "n_prompt_tokens": 16559,
+   "gen_text": "Iran",
+   "score": 1.0
+  },
+  {
+   "i": 44,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 44,
+    "length": 12247,
+    "all_classes": null,
+    "answers": [
+     "Hakim Abdullah Jamal"
+    ]
+   },
+   "answer": [
+    "Hakim Abdullah Jamal"
+   ],
+   "pred": "Hakim Jamal",
+   "correct": 0.8,
+   "n_prompt_tokens": 17068,
+   "gen_text": "Hakim Jamal",
+   "score": 0.8
+  },
+  {
+   "i": 45,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 45,
+    "length": 9574,
+    "all_classes": null,
+    "answers": [
+     "Keith Morris"
+    ]
+   },
+   "answer": [
+    "Keith Morris"
+   ],
+   "pred": "Keith Morris",
+   "correct": 1.0,
+   "n_prompt_tokens": 14545,
+   "gen_text": "Keith Morris",
+   "score": 1.0
+  },
+  {
+   "i": 46,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 46,
+    "length": 6346,
+    "all_classes": null,
+    "answers": [
+     "YIVO"
+    ]
+   },
+   "answer": [
+    "YIVO"
+   ],
+   "pred": "YIVO",
+   "correct": 1.0,
+   "n_prompt_tokens": 11238,
+   "gen_text": "YIVO",
+   "score": 1.0
+  },
+  {
+   "i": 47,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 47,
+    "length": 7662,
+    "all_classes": null,
+    "answers": [
+     "January 18, 1813"
+    ]
+   },
+   "answer": [
+    "January 18, 1813"
+   ],
+   "pred": "January 18, 1813",
+   "correct": 1.0,
+   "n_prompt_tokens": 10333,
+   "gen_text": "January 18, 1813",
+   "score": 1.0
+  },
+  {
+   "i": 48,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 48,
+    "length": 6717,
+    "all_classes": null,
+    "answers": [
+     "Himalchuli has three main peaks: East (7893 m), West (7540 m) and North (7371 m)"
+    ]
+   },
+   "answer": [
+    "Himalchuli has three main peaks: East (7893 m), West (7540 m) and North (7371 m)"
+   ],
+   "pred": "Himalchuli is higher than Tongshanjiabu.",
+   "correct": 0.1,
+   "n_prompt_tokens": 10469,
+   "gen_text": "Himalchuli is higher than Tongshanjiabu.",
+   "score": 0.1
+  },
+  {
+   "i": 49,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 49,
+    "length": 11051,
+    "all_classes": null,
+    "answers": [
+     "1763"
+    ]
+   },
+   "answer": [
+    "1763"
+   ],
+   "pred": "1791",
+   "correct": 0.0,
+   "n_prompt_tokens": 15459,
+   "gen_text": "1791",
+   "score": 0.0
+  }
+ ]
+}

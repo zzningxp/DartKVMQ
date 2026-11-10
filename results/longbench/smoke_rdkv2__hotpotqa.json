@@ -1,0 +1,111 @@
+{
+ "summary": {
+  "task": "longbench",
+  "method": "rdkv",
+  "method_kw": {
+   "bits": 2,
+   "group": 128,
+   "sink": 128,
+   "varn_iters": 8,
+   "rtn_quantile": 0.0,
+   "budget": 1024
+  },
+  "n": 4,
+  "max_new": 32,
+  "gen_kwargs": {
+   "do_sample": false
+  },
+  "acc": 0.5833333333333334,
+  "wall_s": 19.603020668029785,
+  "dataset": "hotpotqa",
+  "model": "Qwen/Qwen3-4B"
+ },
+ "bits_report": {
+  "bpe_k": 0.4872089477935103,
+  "bpe_v": 0.061067529507772535,
+  "fp16_eq_tokens_per_head": 1024.0,
+  "retention": 0.3151592656727905
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 0,
+    "length": 8616,
+    "all_classes": null,
+    "answers": [
+     "Miller v. California"
+    ]
+   },
+   "answer": [
+    "Miller v. California"
+   ],
+   "pred": "Gates v. Collier",
+   "correct": 0.3333333333333333,
+   "n_prompt_tokens": 11770,
+   "gen_text": "Gates v. Collier",
+   "score": 0.3333333333333333
+  },
+  {
+   "i": 1,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 1,
+    "length": 11525,
+    "all_classes": null,
+    "answers": [
+     "Charles L. Clifford"
+    ]
+   },
+   "answer": [
+    "Charles L. Clifford"
+   ],
+   "pred": "Charles L. Clifford",
+   "correct": 1.0,
+   "n_prompt_tokens": 17305,
+   "gen_text": "Charles L. Clifford",
+   "score": 1.0
+  },
+  {
+   "i": 2,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 2,
+    "length": 11935,
+    "all_classes": null,
+    "answers": [
+     "Norman"
+    ]
+   },
+   "answer": [
+    "Norman"
+   ],
+   "pred": "Norman",
+   "correct": 1.0,
+   "n_prompt_tokens": 17371,
+   "gen_text": "Norman",
+   "score": 1.0
+  },
+  {
+   "i": 3,
+   "meta": {
+    "dataset": "hotpotqa",
+    "idx": 3,
+    "length": 11879,
+    "all_classes": null,
+    "answers": [
+     "Sun"
+    ]
+   },
+   "answer": [
+    "Sun"
+   ],
+   "pred": "Jupiter",
+   "correct": 0.0,
+   "n_prompt_tokens": 16747,
+   "gen_text": "Jupiter",
+   "score": 0.0
+  }
+ ]
+}

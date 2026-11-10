@@ -1,0 +1,51 @@
+{
+ "summary": {
+  "task": "line_retrieval",
+  "method": "kvarn",
+  "method_kw": {
+   "bits": 2,
+   "group": 128,
+   "sink": 128,
+   "varn_iters": 8
+  },
+  "n": 2,
+  "max_new": 8,
+  "gen_kwargs": {
+   "do_sample": false
+  },
+  "acc": 0.0,
+  "wall_s": 0.2998542785644531,
+  "lines": 5
+ },
+ "bits_report": {
+  "bpe_k": 2.3125,
+  "bpe_v": 2.3125,
+  "fp16_eq_tokens_per_head": null
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "lines": 5,
+    "k": 4
+   },
+   "answer": "USGN5RXUI2",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 124,
+   "gen_text": "Southern abund Load \u041c\u0435\u0436\u0434\u0443optional apercriptorlb"
+  },
+  {
+   "i": 1,
+   "meta": {
+    "lines": 5,
+    "k": 4
+   },
+   "answer": "0Z0Q2YWTJ4",
+   "pred": "",
+   "correct": false,
+   "n_prompt_tokens": 123,
+   "gen_text": "Southern abund Load \u041c\u0435\u0436\u0434\u0443optional apercriptorlb"
+  }
+ ]
+}

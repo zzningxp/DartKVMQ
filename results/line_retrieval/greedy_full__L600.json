@@ -1,0 +1,388 @@
+{
+ "summary": {
+  "task": "line_retrieval",
+  "method": "full",
+  "method_kw": {
+   "bits": 2,
+   "group": 128,
+   "sink": 128,
+   "varn_iters": 8
+  },
+  "n": 30,
+  "max_new": 32,
+  "gen_kwargs": {
+   "do_sample": false
+  },
+  "acc": 0.6333333333333333,
+  "wall_s": 22.136910676956177,
+  "lines": 600,
+  "model": "Qwen/Qwen3-4B"
+ },
+ "bits_report": {
+  "bpe_k": 16.0,
+  "bpe_v": 16.0,
+  "fp16_eq_tokens_per_head": null
+ },
+ "records": [
+  {
+   "i": 0,
+   "meta": {
+    "lines": 600,
+    "k": 264
+   },
+   "answer": "J5O23RN58R",
+   "pred": "J5O23RN58R",
+   "correct": true,
+   "n_prompt_tokens": 8910,
+   "gen_text": "J5O23RN58R"
+  },
+  {
+   "i": 1,
+   "meta": {
+    "lines": 600,
+    "k": 311
+   },
+   "answer": "P3H7WU5LD9",
+   "pred": "QW89W63CLO",
+   "correct": false,
+   "n_prompt_tokens": 8905,
+   "gen_text": "QW89W63CLO"
+  },
+  {
+   "i": 2,
+   "meta": {
+    "lines": 600,
+    "k": 72
+   },
+   "answer": "XB3IC2DZ9L",
+   "pred": "XB3IC2DZ9L",
+   "correct": true,
+   "n_prompt_tokens": 8833,
+   "gen_text": "XB3IC2DZ9L"
+  },
+  {
+   "i": 3,
+   "meta": {
+    "lines": 600,
+    "k": 178
+   },
+   "answer": "6PYX933P1T",
+   "pred": "6PYX933P1T",
+   "correct": true,
+   "n_prompt_tokens": 8925,
+   "gen_text": "6PYX933P1T"
+  },
+  {
+   "i": 4,
+   "meta": {
+    "lines": 600,
+    "k": 340
+   },
+   "answer": "1PYMC0BXO4",
+   "pred": "1PYMC0BXO4",
+   "correct": true,
+   "n_prompt_tokens": 8859,
+   "gen_text": "1PYMC0BXO4"
+  },
+  {
+   "i": 5,
+   "meta": {
+    "lines": 600,
+    "k": 144
+   },
+   "answer": "TPZ2FUD779",
+   "pred": "TPZ2FUD779",
+   "correct": true,
+   "n_prompt_tokens": 8896,
+   "gen_text": "TPZ2FUD779"
+  },
+  {
+   "i": 6,
+   "meta": {
+    "lines": 600,
+    "k": 266
+   },
+   "answer": "1BTKOLXTC3",
+   "pred": "5KW8CX98Q7",
+   "correct": false,
+   "n_prompt_tokens": 8932,
+   "gen_text": "5KW8CX98Q7"
+  },
+  {
+   "i": 7,
+   "meta": {
+    "lines": 600,
+    "k": 439
+   },
+   "answer": "5X7MYEV5TR",
+   "pred": "5X7MYEV5TR",
+   "correct": true,
+   "n_prompt_tokens": 8837,
+   "gen_text": "5X7MYEV5TR"
+  },
+  {
+   "i": 8,
+   "meta": {
+    "lines": 600,
+    "k": 132
+   },
+   "answer": "U57PMXH5PR",
+   "pred": "U57PMXH5PR",
+   "correct": true,
+   "n_prompt_tokens": 8827,
+   "gen_text": "U57PMXH5PR"
+  },
+  {
+   "i": 9,
+   "meta": {
+    "lines": 600,
+    "k": 29
+   },
+   "answer": "P1561MRRML",
+   "pred": "I0UFH39L3O",
+   "correct": false,
+   "n_prompt_tokens": 8911,
+   "gen_text": "I0UFH39L3O"
+  },
+  {
+   "i": 10,
+   "meta": {
+    "lines": 600,
+    "k": 489
+   },
+   "answer": "HZTH2FYK0E",
+   "pred": "HZTH2FYK0E",
+   "correct": true,
+   "n_prompt_tokens": 8921,
+   "gen_text": "HZTH2FYK0E"
+  },
+  {
+   "i": 11,
+   "meta": {
+    "lines": 600,
+    "k": 22
+   },
+   "answer": "TAT92BJ5OL",
+   "pred": "S6PVVH54DT",
+   "correct": false,
+   "n_prompt_tokens": 8900,
+   "gen_text": "S6PVVH54DT"
+  },
+  {
+   "i": 12,
+   "meta": {
+    "lines": 600,
+    "k": 164
+   },
+   "answer": "1N80013WWC",
+   "pred": "9584VQT36P",
+   "correct": false,
+   "n_prompt_tokens": 8918,
+   "gen_text": "9584VQT36P"
+  },
+  {
+   "i": 13,
+   "meta": {
+    "lines": 600,
+    "k": 380
+   },
+   "answer": "PLNRXAMMBJ",
+   "pred": "PLNRXAMMBJ",
+   "correct": true,
+   "n_prompt_tokens": 8844,
+   "gen_text": "PLNRXAMMBJ"
+  },
+  {
+   "i": 14,
+   "meta": {
+    "lines": 600,
+    "k": 394
+   },
+   "answer": "UWBKHLXLLD",
+   "pred": "X9GN1VC3EK",
+   "correct": false,
+   "n_prompt_tokens": 8850,
+   "gen_text": "X9GN1VC3EK"
+  },
+  {
+   "i": 15,
+   "meta": {
+    "lines": 600,
+    "k": 214
+   },
+   "answer": "AHL3Q6ELU9",
+   "pred": "AHL3Q6ELU9",
+   "correct": true,
+   "n_prompt_tokens": 8829,
+   "gen_text": "AHL3Q6ELU9"
+  },
+  {
+   "i": 16,
+   "meta": {
+    "lines": 600,
+    "k": 119
+   },
+   "answer": "HXUU9Z0P78",
+   "pred": "HXUU9Z0P78",
+   "correct": true,
+   "n_prompt_tokens": 8843,
+   "gen_text": "HXUU9Z0P78"
+  },
+  {
+   "i": 17,
+   "meta": {
+    "lines": 600,
+    "k": 390
+   },
+   "answer": "ZBX3Y2008V",
+   "pred": "ZBX3Y2008V",
+   "correct": true,
+   "n_prompt_tokens": 8891,
+   "gen_text": "ZBX3Y2008V"
+  },
+  {
+   "i": 18,
+   "meta": {
+    "lines": 600,
+    "k": 321
+   },
+   "answer": "9OLH5QTGQH",
+   "pred": "QDMSP1OTFZ",
+   "correct": false,
+   "n_prompt_tokens": 8908,
+   "gen_text": "QDMSP1OTFZ"
+  },
+  {
+   "i": 19,
+   "meta": {
+    "lines": 600,
+    "k": 169
+   },
+   "answer": "FENQB257AK",
+   "pred": "FENQB257AK",
+   "correct": true,
+   "n_prompt_tokens": 8874,
+   "gen_text": "FENQB257AK"
+  },
+  {
+   "i": 20,
+   "meta": {
+    "lines": 600,
+    "k": 38
+   },
+   "answer": "G1C42E38KJ",
+   "pred": "3UHA3KSTEJ",
+   "correct": false,
+   "n_prompt_tokens": 8833,
+   "gen_text": "3UHA3KSTEJ"
+  },
+  {
+   "i": 21,
+   "meta": {
+    "lines": 600,
+    "k": 236
+   },
+   "answer": "C6FT93945N",
+   "pred": "R16UEO586W",
+   "correct": false,
+   "n_prompt_tokens": 8939,
+   "gen_text": "R16UEO586W"
+  },
+  {
+   "i": 22,
+   "meta": {
+    "lines": 600,
+    "k": 576
+   },
+   "answer": "FO3B5QOOC7",
+   "pred": "FO3B5QOOC7",
+   "correct": true,
+   "n_prompt_tokens": 8887,
+   "gen_text": "FO3B5QOOC7"
+  },
+  {
+   "i": 23,
+   "meta": {
+    "lines": 600,
+    "k": 214
+   },
+   "answer": "N8DF6YRPX2",
+   "pred": "JGSQ1JB8C7",
+   "correct": false,
+   "n_prompt_tokens": 8816,
+   "gen_text": "JGSQ1JB8C7"
+  },
+  {
+   "i": 24,
+   "meta": {
+    "lines": 600,
+    "k": 182
+   },
+   "answer": "GAZKA7EOMZ",
+   "pred": "X2AM0WYGNE",
+   "correct": false,
+   "n_prompt_tokens": 8854,
+   "gen_text": "X2AM0WYGNE"
+  },
+  {
+   "i": 25,
+   "meta": {
+    "lines": 600,
+    "k": 69
+   },
+   "answer": "KU67SQAPYL",
+   "pred": "KU67SQAPYL",
+   "correct": true,
+   "n_prompt_tokens": 8851,
+   "gen_text": "KU67SQAPYL"
+  },
+  {
+   "i": 26,
+   "meta": {
+    "lines": 600,
+    "k": 558
+   },
+   "answer": "2SKJ5JM3ZY",
+   "pred": "2SKJ5JM3ZY",
+   "correct": true,
+   "n_prompt_tokens": 8855,
+   "gen_text": "2SKJ5JM3ZY"
+  },
+  {
+   "i": 27,
+   "meta": {
+    "lines": 600,
+    "k": 582
+   },
+   "answer": "8SCRK9QGYB",
+   "pred": "8SCRK9QGYB",
+   "correct": true,
+   "n_prompt_tokens": 8877,
+   "gen_text": "8SCRK9QGYB"
+  },
+  {
+   "i": 28,
+   "meta": {
+    "lines": 600,
+    "k": 403
+   },
+   "answer": "XUJ6WTGL7V",
+   "pred": "XUJ6WTGL7V",
+   "correct": true,
+   "n_prompt_tokens": 8852,
+   "gen_text": "XUJ6WTGL7V"
+  },
+  {
+   "i": 29,
+   "meta": {
+    "lines": 600,
+    "k": 297
+   },
+   "answer": "R3CVUIYK5O",
+   "pred": "R3CVUIYK5O",
+   "correct": true,
+   "n_prompt_tokens": 8857,
+   "gen_text": "R3CVUIYK5O"
+  }
+ ]
+}
