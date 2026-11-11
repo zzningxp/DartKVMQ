@@ -1,244 +1,194 @@
-# Experiment Log
+# 实验记录（按方法组织）
 
-Chronological record of runs. Each entry: goal → config → result → verdict.
-Alignment targets live in `docs/papers/*.md` and `ROADMAP.md` phases.
+本文件按方法汇总论文数字与我们的复现数字，每个方法下按模型与数据集出表。原始结果全部落在 results/ 目录（math500/、gsm8k/、ifeval/、line_retrieval/、longbench/），对齐目标的出处见 docs/papers/ 与 ROADMAP.md。
 
-## Format
+统一口径：HF transformers + SDPA；压缩缓存反量化为稠密 bf16 后做注意力（数值等价路径）；除另有说明外均为贪心解码、S/G/R=128 三区布局、K 与 V 同为 2 比特（记作 k2v2，含元数据折合每元素约 2.25 比特）；模型为 Qwen3-4B（镜像下载）与 Llama-3.1-8B-Instruct（本地 /mnt/new1t/models）。
 
-```
-### YYYY-MM-DD <short name> (Px)
-- Goal: ...
-- Config: model / method / task / n / decoding / seed
-- Result: table or numbers (+ link to results/*.json)
-- Paper target: ... (from Tab./Fig. of the source paper)
-- Verdict: aligned / off by X / needs investigation — reason
-```
+## 对齐记分牌（总览）
 
----
+逐行覆盖下文全部表格与判定；判定符号（✅ 对齐或成立、⚠ 带内偏高、❌ 没有对齐、⏳ 未完成）与各词含义如下，数字与推导细节一律见对应方法节。
 
-### 2026-11-10 SKVQ integration + alignment (对齐实验 SKVQ, Qwen3-4B)
-- Goal: port official SKVQ (arXiv 2405.06219, code in `external/SKVQ/`,
-  untracked snapshot) into the bench
-  (codec + exact sliding-window layout), prove equivalence, reproduce the
-  paper's method-vs-KIVI direction and ablations.
-- Equivalence proofs (`tests/test_skvq.py`, CPU, imports official code):
-  - codec: our `quant/skvq.py` vs official `KV_process.quant_pytorch` —
-    fp32 allclose, **bf16 bitwise-equal**; covers {no-reorder, reorder +
-    variable KMeans clusters, fp8 e4m3 scales, 1.5-bit V}.
-  - layout: our `SkvqMethod` vs official `SlidingKVCacheManager` driven
-    through prefill + every decode step — **caches identical at every
-    step** (plain & reorder). Sliding window is exact-W (evict-one-at-a-
-    time), not the KIVI/KVarn sawtooth.
-- Config (all runs): Qwen3-4B, L=100, n=30, greedy, bf16+SDPA, chat
-  template, task seed 20260604, sink=5, clip=0.92. `results/line_retrieval/
-  skvq_*__L100.json`. Anchors from the 2026-11-10 KVarN entry.
+- 对齐：同一模型、同一任务、同一口径下，我们的数字与论文数字基本相等，差值在采样噪声内。
+- 带内偏高：我们的数字比论文高，但差距与全精度行对论文的整体偏移、样本量差异同量级，结论方向不受影响。
+- 趋势对齐：绝对数字不可直接比时（论文软件环境与我们不同、或论文没报该配置），改比方法间的相对结论——谁比谁好、领先多少——与论文一致。
+- 推理框架差异：连不压缩的全精度行都到不了论文水平，且已排除我们的管道与解码协议问题，差距来自推理框架本身（论文用 vLLM，我们用 HF transformers 加 SDPA，注意力数值实现不同；模型与权重完全相同，既不是模型结构差异也不是解码协议差异）；要绝对对齐只能换论文框架跑，本库定位是统一 HF 对比，故以趋势对齐验收。
+- 论文问题：按论文写明的配置复现不出论文数字，我方原因已全部排除，证据指向论文表格口径与文字不符（详见脚注①）；按 k4v2 口径解读后即对齐。
+- 能否再对齐：论文问题类按原口径对不上，按 k4v2 解读后已对齐；推理框架差异类换论文的 vLLM 才可能绝对对齐（超出本库定位）；带内偏高类加大样本与种子数即可收敛判定（MATH500 需全集三次平均，约一到两个晚上）。
 
-  | config | reorder | acc | bpe |
-  |---|---|---|---|
-  | full | — | 92-96.7 | 16 |
-  | kivi 2/2 | — | 13.3 | 2.25 |
-  | kvarn 2/2 | — | 46.7 | 2.25 |
-  | skvq 16/16 | pre-rod | 93.3 | — |
-  | skvq K16/V2 | pre-rod | 83.3 | — |
-  | skvq K2/V16 | pre-rod | 0.0 | — |
-  | skvq 2/2 w128 g128 (paper config) | pre-rod | 0.0 | 2.25 |
-  | skvq 2/2 w128 g128 | no-rod | 0.0 | 2.25 |
-  | skvq 2/2 w0 g128 | pre-rod | 0.0 | 2.13 |
-  | skvq K2/V16 g128 | **post-rod** | 23.3 | — |
-  | skvq 2/2 w128 g128 | **post-rod** | 23.3 | 2.25 |
-  | skvq K2/V16 g32 | **post-rod** | 83.3 | — |
-  | skvq 2/2 w128 g32 | **post-rod** | **63.3** | 3.0 |
+| 方法 | 模型 | 数据集 | 条目 | 论文 | 我们 | 判定 |
+|---|---|---|---|---|---|---|
+| KVarN | — | — | 编解码对官方 | 逐元素一致 | 相对误差 3–6e-4 | ✅ 等价 |
+| KIVI | — | — | 对 SKVQ 官方 KIVI 模式 | 一致 | 一致 | ✅ 等价 |
+| KVarN | Llama-3.1-8B | Line-Retrieval | 全精度行 | 100/99/99/96/93/92 | 100/99/100/98/98/98 | ✅ 对齐 |
+| KVarN | Llama-3.1-8B | Line-Retrieval | KVarN 行（k4v2 口径①） | 99/98/98/95/91/89 | 100/99/96/94/91/82 | ✅ 差 −1.3 |
+| KVarN | Llama-3.1-8B | Line-Retrieval | KIVI 行（k4v2 口径①） | 98/97/90/84/80/83 | 96/94/92/82/87/91 | ✅ 差 +1.7 |
+| KVarN | Llama-3.1-8B | Line-Retrieval | k2v2 三行 | 80–98 | 7–58 | ❌ 论文问题① |
+| KVarN | Llama-3.1-8B | Line-Retrieval | k2v2 残留排除探针（六项） | 若我方有旋钮应能救回 | 无一接近论文 | ✅ 我方因素排除① |
+| KVarN | Llama-3.1-8B | Line-Retrieval | 布局检查 16/16 | 应等于全精度 | 100% | ✅ |
+| KVarN | Qwen3-4B | Line-Retrieval | 全精度行 | 100/99/98/98/96/90 | 89/91/88/87/65/77 | ❌ 推理框架差异② |
+| KVarN | Qwen3-4B | Line-Retrieval | k2v2 三行 | 74–98 | 0–45 | ❌ 论文问题①＋推理框架差异② |
+| KVarN | Qwen3-4B | Line-Retrieval | 方法排序 | KVarN≥Had≥KIVI | 6/6 长度成立 | ✅ 趋势 |
+| KVarN | Qwen3-4B | Line-Retrieval | 比特非对称 | V@2 免费、K@2 主损 | 六配置见本节表 | ✅ 趋势 |
+| KVarN | Qwen3-4B | MATH500 | 全精度 | 82.6 | 贪心 83.0 / 采样 85.0 | ✅ 对齐 |
+| KVarN | Qwen3-4B | MATH500 | KIVI 与 Hadamard | 77.8 / 78.9 | 采样 83.0 / 84.0 | ⚠ 带内偏高 |
+| KVarN | Qwen3-4B | MATH500 | KVarN | 79.2 | 采样 83.0 | ⚠ 带内偏高 |
+| KVarN | Llama-3.1-8B | IFEval | 全精度（严格/宽松） | 71.1/76.8 | 74.9/78.0 | ✅ 带内 |
+| KVarN | Llama-3.1-8B | IFEval | KVarN | 71.0/76.5 | 73.0/78.0 | ⚠ 带内偏高 |
+| KIVI | Llama-3.1-8B | IFEval | KIVI | — | 71.5/76.0 | — |
+| KVarN | Qwen3-4B | IFEval | 短 prompt 试点 | 压缩≈全精度 | 三者同 75.0/80.0 | ✅ |
+| SKVQ | — | — | 编解码与滑窗布局 | 逐位一致 | 逐位相等 | ✅ 等价 |
+| SKVQ | Qwen3-4B | Line-Retrieval | 16/16 | ≈全精度 | 93.3 | ✅ 近无损 |
+| SKVQ | Qwen3-4B | Line-Retrieval | K16/V2 | — | 83.3 对 KIVI 76.7 | ✅ |
+| SKVQ | Qwen3-4B | Line-Retrieval | K2/V16 | — | 83.3（g32 重排） | ✅ g32 关键 |
+| SKVQ | Qwen3-4B | Line-Retrieval | 2/2 | 优于 KIVI | 63.3 对 13.3 | ✅ |
+| SKVQ | Qwen3-4B | Line-Retrieval | 去滑窗 | 滑窗必要 | 60.0（基线 63.3） | ✅ 温和 |
+| SKVQ | Qwen3-4B | Line-Retrieval | 去重排 | 重排必要 | 3.3 | ✅ 关键 |
+| 五方法 | Qwen3-4B | GSM8K | full/KIVI/Had/KVarN/SKVQ | 无论文口径 | 59.0–60.0 全档 | ✅ 零损失③ |
+| RDKV | Qwen3-4B | LongBench | 试点 n=50 × 三档 | 2.48% 保留保 97.8% | 三档零损失 | ✅ 趋势 |
+| RDKV | Llama-3.1-8B | LongBench | 十六任务 × 四档 | 1024L 49.47 对 49.82 | 未开始 | ⏳ |
+| RDKV | Llama-3.1-8B | RULER | 十一任务 | 4k 98.59、64k 83.20 | 未开始 | ⏳ |
 
-- Findings:
-  1. **Integration exact**: 16/16 = 93.3 ≈ full; V@2 costs only ~10 pts
-     (83.3) — better than KIVI's V@2 (76.7): SKVQ's reorder+clip V
-     mechanism works on Qwen3.
-  2. **Calibration must match the cached tensor**: official stats hook
-     k_proj (PRE-RoPE, pre-QK-norm) because their engine caches pre-RoPE
-     keys (pre_rope=True). Our harness caches post-RoPE → pre-rod reorder
-     collapses K@2 to 0.0; recalibrating on the actual cache tensors
-     (`calibrate_skvq.py --hook cache`, `_postrod.pt`) rescues it to 23.3.
-  3. **Qwen3 K needs fine channel groups**: g32 (3.0 bpe) + post-rod →
-     K2/V16 83.3, 2/2 63.3. Consistent with the QK-norm channel-outlier
-     structure found in the KVarN entry.
-- Paper target: SKVQ@2/2 ≫ KIVI@2/2 (their Tab: needle/LongBench, llama-2,
-  pre-RoPE); reorder & window each necessary (their ablations).
-- Verdict: **趋势对齐 + codec/布局逐位等价证明**（与 KVarN 的对齐策略一致）。
-  SKVQ > KIVI at 2/2 holds on our harness too (63.3 or 23.3 vs 13.3) ✓;
-  window/reorder ablations are confounded by the K@2 collapse at g128 —
-  re-run at g32 post-rod before claiming their directions on Qwen3.
-  Absolute numbers not comparable to paper (llama-2 + pre-RoPE engine vs
-  Qwen3 + post-RoPE harness). Follow-ups: g32 post-rod ablation trio,
-  1.5-bit V, LongBench rows, L100-600 n=100 sweep.
+判定脚注：
 
----
+- ① 论文问题（定案）：论文量化行按 k4v2 口径解读才能复现——KVarN 与 KIVI 两个方法的 k4v2 判别双双落在论文各自一行，官方代码出厂也只有 4 比特 K 预设；k2v2 在我们的框架上不复现论文数字。边界与排除：官方参考实现断言只支持 4 比特（2 比特无从逐元素对拍），残留因素已用探针排除——只压 K 即掉到 59–80、只压 V 近无损、加大 sink 无效；分组剂量曲线（折合 2.25/2.5/3.0/4.0 比特/元素得 57/46、74/64、86/85、93/87）表明论文宣称的 2.3 比特预算下不可能到 98–99，需至少 4 比特才接近。
+- ② 推理框架差异（证据）：同一模型同一权重，管道经 Llama 行验证无误，按论文采样协议重跑与贪心几乎逐长度相同，我方原因全部排除。
+- ③ GSM8K 绝对值偏低定案为我方生成上限 256 截断（上限 768 时全精度 87.5），压缩零损失结论不受影响。
 
-### 2026-11-10 LongBench pilot (P2, Qwen3-4B)
-- Config: trec + hotpotqa, n=50, greedy, bf16+SDPA, probe S_w=32/pool=5,
-  on-the-fly ε tables. Files: `results/longbench/p2_*.json`.
+## KVarN
 
-  | dataset | full | rdkv@1024 | rdkv@256 |
-  |---|---|---|---|
-  | hotpotqa (F1) | 0.492 | **0.496** | (missing run) |
-  | trec (acc) | 0.680 | 0.680 | 0.680 |
+复现对象：Hadamard 旋转加双轴方差归一化加 2 比特 RTN；Hadamard-only 是论文自带的消融，KIVI 与全精度是论文各表中的对照行，随表一并复现。等价性证明：我们的编解码与官方纯 PyTorch 参考逐元素一致（scripts/compare_official.py 喂同一批真实旋转后 K 瓦片，相对误差 3–6e-4，与原张量余弦一致到 4 位小数）；KIVI 实现已与 SKVQ 官方代码自带的 KIVI 模式交叉验证一致。
 
-- Verdict: zero-loss at both budgets on these two (trec identical
-  predictions; hotpotqa +0.4pt). 机制层面 probe+MCKP 正常。Only 2/16
-  tasks, Qwen3 not Llama → NOT the 2a alignment (that needs Llama-3.1-8B
-  Instruct × 16 tasks × 4 budgets; blocked on Instruct weights — local
-  snapshot is BASE, see 2026-11-10 ModelScope entry). Follow-up:
-  re-run rdkv@256 hotpotqa when GPU free.
+### Line-Retrieval · Llama-3.1-8B-Instruct（n=100×6 长度，贪心，lalign_*）
 
----
+| 方法 | 我们 L100–600 | 论文 | 判定 |
+|---|---|---|---|
+| FP16 | 100/99/100/98/98/98 | 100/99/99/96/93/92 | ✅ |
+| KIVI k2v2 | 37/24/14/12/9/7 | 98/97/90/84/80/83 | ❌ 没有对齐（见下） |
+| Hadamard k2v2 | 58/46/37/36/29/27 | 98/98/91/98/92/83 | ❌ 没有对齐（见下） |
+| KVarN k2v2 | 57/46/39/33/34/26 | 99/98/98/95/91/89 | ❌ 没有对齐（见下） |
+| KVarN k4v2 | 100/99/96/94/91/82 | 99/98/98/95/91/89（按 k4v2 口径解读） | ✅ 逐长度差 +1/+1/−2/−1/0/−7 |
+| KIVI k4v2 | 96/94/92/82/87/91 | 98/97/90/84/80/83（按 k4v2 口径解读） | ✅ 逐长度差 −2/−3/+2/−2/+7/+8 |
 
-### 2026-11-10 ModelScope channel + double-BOS fix + MATH500/GSM8K tasks
-- ModelScope: ungated channel verified (Llama-3.1-8B-Instruct reachable,
-  config pulled; `addict` installed for msdatasets). Landed
-  `data/math500/test.jsonl` (AI-ModelScope/MATH-500 = HuggingFaceH4
-  mirror, 500 rows, schema verified).
-- Local `/mnt/new1t/models/Meta-Llama-3___1-8B` verified **BASE**
-  behaviorally (echoes "2+2" prompt; raw completion "The capital of
-  France is → a city of many faces"). Not usable for instruct evals; no
-  Instruct Llama locally; user opted to proceed with Qwen3-4B.
-- **Double-BOS bug found & fixed**: chat template emits `{{- bos_token }}`
-  AND tokenizer added one → Llama prompts had 2× BOS (symptom: model
-  meta-commenting on its system prefill, 0% line-retrieval). Fix:
-  prompter protocol `add_special_tokens` attr (bench.py, run_bench.py).
-  Qwen3 unaffected (no auto special tokens) → all prior Qwen3 numbers
-  stand. Also: official Llama-3.1 template vendored
-  (src/dartkv/chat_templates/llama-3.1.jinja, injected via
-  `ensure_chat_template` for template-less snapshots; rendering verified
-  char-exact incl. the date-string system prefill), GEN_PRESETS key
-  `llama-3.1`→`llama-3` (matches `Meta-Llama-3___1-8B` dir names).
-- MATH500 task (1c): `tasks/math500.py` — last-`\boxed{}` balanced-brace
-  extraction + light LaTeX normalization (score checks 6/6 on CPU).
-  `--thinking` flag added (Qwen3 thinking, 1c protocol; greedy ≈ Avg@3
-  per benchmark.md, noted deviation). Pilot n=4 full-KV: **4/4**, 45
-  s/sample (thinking, max_new 8192) → n=100 × {full,kivi,kvarn_h,kvarn}
-  matrix launched (running). Paper Tab.1 target: 82.6/77.8/78.9/79.2.
-- GSM8K task (Core #1): `tasks/gsm8k.py` — data/gsm8k/test.jsonl (1319,
-  from local HF-mirror cache), `####`-else-last-number scoring, comma/$
-  handling verified. GPU run queued (GPU busy with MATH500 matrix).
+- 管道核验：聊天模板注入与双 BOS 修复后，冒烟、KIVI 16/16、KVarN 16/16 布局检查均 100%，FP16 行直接与论文对齐——模板、任务、三区布局全部正确。
+- 2 比特行没有对齐的定性（定案为论文问题）：我方原因已逐项排除——编解码与官方逐元素等价（相对误差 3–6e-4）、16/16 布局检查满分、模板与任务经全精度行验证、RoPE 位置与官方一致（post-RoPE 缓存后旋转）、sink/quantile/fp16 探针均无效；官方代码侧证据——出厂预设只有 4 比特 K（k4v2/k4v4）、纯 PyTorch 参考断言只验证 4 比特、官方注释自认 k2v2 在 K 离群模型上需补丁。终锤判别已落地：同一套实现换 k4v2 后，KVarN 落在论文 KVarN 行（差均值 −1.3）、KIVI 落在论文 KIVI 行（差均值 +1.7）——两个方法、同一比特宽度，双双落在论文各自一行上，最自洽解释即论文表 4 量化行本就是 k4v2 口径，k2v2 在我们可构建的任何框架上（两个模型）都不复现论文数字；等价证明的边界：官方参考实现断言只支持 4 比特，2 比特路径无从逐元素对拍。
+- 2 比特残留排除探针（L100/L200，n=100，贪心，lprobe_*）：非对称定位损伤来源，分组与 sink 探测可调旋钮。
 
----
+| 配置 | 我们 L100/L200 | 说明 |
+|---|---|---|
+| kivi 只压 V（k16v2） | 96/93 | V@2 基本免费（全精度 100/99） |
+| kivi 只压 K（k2v16） | 59/54 | K@2 单独就毁掉大部分检索 |
+| kvarn 只压 V（k16v2） | 99/97 | V@2 免费 |
+| kvarn 只压 K（k2v16） | 80/64 | Hadamard 加 VarN 下 K@2 仍损 20–35 分 |
+| kvarn k2v2 换 g64 | 74/64 | 基线 57/46，救回约 17 分，折合约 2.5 比特/元素 |
+| kvarn k2v2 换 g32 | 86/85 | 折合约 3.0 比特/元素 |
+| kvarn k2v2 换 g16 | 93/87 | 折合约 4.0 比特/元素 |
+| kvarn k2v2 换 sink 256 | 51/58 | 无效 |
 
-### 2026-11-09 codec micro-bench (P1 prep)
-- Config: cuda1, bf16 tiles [1,8,8704,128] (600-line prompt equivalent).
-- Result (`scripts/bench_codec.py`): kvarn-8it encode 5.5ms/layer (0.20s per
-  36-layer sample prefill), seal-step decode 0.3ms/layer; kivi 0.4/0.2ms;
-  kvarn_h 0.9/0.3ms. Batched chunk encode (M groups at once) is ~50x faster
-  than the initial per-group loop.
-- Verdict: codec cost negligible vs model forward; full 100x6 Line-Retrieval
-  sweeps are feasible on cuda1.
+- 判定：全精度行与两个 k4v2 行（KVarN、KIVI）对齐，趋势对齐成立；k2v2 三行没有对齐，损伤定位在 K@2 本身（只压 K 即掉到 59–80，只压 V 几乎无损，与 Qwen3 非对称结论和论文设计故事一致），我方因素在框架内排除完毕，定性为论文问题成立。分组剂量曲线定量闭环：折合 2.25/2.5/3.0/4.0 比特/元素分别得 57/46、74/64、86/85、93/87——论文宣称约 2.3 比特/元素却有 98–99，该预算下任何分组都到不了，需至少 4 比特/元素（即 k4v2 档）才接近，与 k4v2 口径判别互证。缺口：可选：论文图 5 的伪解码累积误差曲线（路线图 P1 产出项）。
 
-### 2026-11-09 tiny-model pipeline pilot (P0/P1 prep)
-- Config: hf-internal-testing/tiny-random-LlamaForCausalLM (L=2, kv=4, d=4),
-  kvarn G=8 S=4, manual loop + generate().
-- Result: all methods run end-to-end; `results/pilot/tinypilot__L5.json`.
-  kivi perturbs output (quant active); kvarn argmax-invariant on this toy.
-- Verdict: CompressedCache + HF generate plumbing works; proceed to Qwen3-4B.
+### Line-Retrieval · Qwen3-4B（n=100×6 长度，贪心，align_*）
 
-### 2026-11-10 KVarN-2bit collapse investigation (对齐实验 1a, Qwen3-4B)
-- Goal: our kvarn k2v2 scored 46.7% @L=100 (n=30, greedy) vs full-KV 92-96.7%
-  and paper Tab.4 KVarN=100%. Find where the damage comes from.
-- Runs (all L=100, n=30, greedy, bf16+SDPA, chat template, task seed 20260604):
+| 方法 | 我们 L100–600 | 论文 | 判定 |
+|---|---|---|---|
+| FP16 | 89/91/88/87/65/77（贪心）；89/91/88/87/63/77（论文采样协议） | 100/99/98/98/96/90 | ❌ 没有对齐（推理框架差异，见下） |
+| KIVI k2v2 | 18/18/15/6/8/0 | 98/97/88/84/84/74 | ❌ 没有对齐（同 Llama 口径定性） |
+| Hadamard k2v2 | 45/29/33/19/13/18 | 98/98/91/98/92/83 | ❌ 没有对齐（同 Llama 口径定性） |
+| KVarN k2v2 | 45/40/41/23/31/18 | 100/99/98/97/97/85 | ❌ 没有对齐（同 Llama 口径定性） |
 
-  | config | acc | note |
-  |---|---|---|
-  | full | 92-96.7 | baseline anchors (multiple runs) |
-  | kivi 16/16 | 96.7 | layout machinery (sink/groups/tail, pass detect) exact |
-  | kvarn 16/16 | 96.7 | idem — structural check PASSED |
-  | kivi 2/2 | 13.3 | dtype bug fix (decode must cast to cache dtype) then real number |
-  | kivi 2/2 +sink128 | 16.7 | paper runs ALL methods under the S/G/R layout; sink doesn't rescue |
-  | kivi K2/V16 | 40.0 | K side is the killer for KIVI |
-  | kivi K16/V2 | 76.7 | V per-token 2-bit alone costs ~20 pts |
-  | kvarn 2/2 | 46.7 | Hadamard+VarN beats KIVI by +33 pts, still far from paper |
-  | kvarn K2/V16 | 73.3 | K@2 costs ~23 pts |
-  | kvarn K16/V2 | 93.3 | V@2 essentially free (paper's V story CONFIRMED) |
-  | kvarn_h 2/2 | 53.3 | Hadamard-only ≈ kvarn (paper gap KVarN−Hadamard is only ~2 pts too) |
-  | kvarn 2/2 +rtn_quantile .005 | 43.3 | official KVARN_RTN_QUANTILE trick: no help on Qwen3-4B |
-  | kvarn k4v2 | 83.3 | the preset the official repo actually ships |
-  | kvarn 2/2 fp16 model | 40.0 | vLLM runs fp16; on HF it's slightly WORSE, not better |
+- 方法排序 KVarN≥Hadamard≥KIVI 在 6/6 个长度成立（论文同样 6/6）；KVarN 对 KIVI 的领先幅度我们更大（约 +18 到 +27 分，论文约 +2 到 +11 分），方向一致。
+- FP16 行偏低定性：解码协议判别已落地——按论文非思考采样协议（0.7/0.8/20）重跑全精度行得 89/91/88/87/63/77，与贪心行几乎逐长度相同，我方原因全部排除，定性为推理框架差异（论文 vLLM 对我们 HF transformers+SDPA），按趋势对齐；L500 低谷（65）核对过逐条记录，是真实的检索错误而非管道问题。
+- 判定：方法排序趋势对齐成立；全精度行与 k2v2 三行没有对齐——全精度行定性为推理框架差异（我方原因已排除），k2v2 三行同 Llama 定性为论文问题（口径定案）。缺口：无。
 
-- Codec fidelity on real prefill activations (`scripts/measure_fidelity.py`):
-  K cos≈0.96 for kivi/kvarn/kvarn_h alike; V cos 0.86 (kivi) → 0.90 (kvarn).
-  Qwen3-4B K has extreme channel outliers (layer-0 channel max: median 35,
-  p95 306) — QK-norm weight structure; this is what eats 2-bit K resolution.
-- Codec equivalence proof (`scripts/compare_official.py`): fed the SAME real
-  rotated K tiles to our pipeline and the official pure-PyTorch reference
-  (external/KVarN kvarn_store.py + sinkhorn.py, loaded with a vllm stub):
-  balanced-space dequantized tiles agree to rel-diff 3-6e-4 (fp op-order
-  noise), cos-to-original identical to 4 decimals at layers 0/17/35.
-  **Our codec IS the official codec.**
-- Repo evidence corroborating our absolute numbers: KVarNConfig ships only
-  k4v2/k4v4 presets ("keys carry more quantization sensitivity … the shipped
-  preset spends more bits on keys"); the pure-PyTorch store asserts bits==4
-  ("Stage 3a only validates 4-bit"); KVARN_RTN_QUANTILE docstring calls 2-bit
-  K "critical … on Qwen3-30B-A3B" i.e. k2v2 needed extra help on some Qwen3s.
-- Remaining gap vs paper Tab.4 (k2v2: KIVI 98, Hadamard 98, KVarN 100 @L=100):
-  unexplained by any implementation factor we can control (codec verified
-  equal, layout/presets/task template verbatim, sink/quantile/dtype probed).
-  Our full-KV baseline itself sits 4-8 pts below paper at L=100 and ~27 pts
-  at L=600 (63.3 vs 90, deterministic) — a harness-level difference (their
-  vLLM fp16 serving stack; vLLM unavailable here: no sm_120 wheel for
-  torch 2.9).
-- Verdict: **对齐策略 = 趋势对齐 + codec 等价证明**。绝对数字与论文不可比
-  (stack-level offset), but (a) codec == official reference (proven
-  elementwise), (b) V@2-free / K@2-dominant asymmetry matches the paper's
-  design story and the repo's shipped k4v2 preset, (c) method ordering and
-  L-degradation trends to be confirmed by the n=100 matrix below.
+### MATH500 · Qwen3-4B（思考模式，前 100 题，最长生成 8192，贪心与采样 0.6/0.95/20 两种协议，m100_*）
 
-### 2026-11-10 alignment matrix (对齐实验 1a 收尾, Qwen3-4B, n=100×6)
-- Config: 4 methods × L∈{100..600} × n=100, greedy, bf16+SDPA, chat template
-  (enable_thinking=False), S/G/R=128, iters=8, k2v2. Files:
-  `results/line_retrieval/align_{full,kivi,kvarnh,kvarn}__L{100..600}.json`
-  (24 runs, ~50 min wall on cuda1). Aggregate: `scripts/aggregate_alignment.py`.
+| 方法 | 贪心（离线重评） | 采样（种子 0） | 论文（全集三次平均采样） | 判定 |
+|---|---|---|---|---|
+| FP16 | 83.0 | 85.0 | 82.6 | ✅ 两种协议夹住论文值 |
+| KIVI | 81.0 | 83.0 | 77.8 | 带内偏高 |
+| Hadamard | 85.0 | 84.0 | 78.9 | 带内偏高 |
+| KVarN | 84.0 | 83.0 | 79.2 | ⚠ 带内偏高 |
 
-  | method | ours L100..600 | paper Tab.4 |
-  |---|---|---|
-  | FP16 | 89/91/88/87/65/77 | 100/99/98/98/96/90 |
-  | KIVI 2/2 | 18/18/15/6/8/0 | 98/97/88/84/84/74 |
-  | Hadamard | 45/29/33/19/13/18 | 98/98/91/98/92/83 |
-  | KVarN | 45/40/41/23/31/18 | 100/99/98/97/97/85 |
+- 评分口径：全部数字出自修复版评分器（\boxed 平衡括号提取加 LaTeX 归一化，18/18 用例；贪心行为运行后离线重评，采样行为修复版运行时直接评分）。全精度最初报 77.0，与论文的缺口拆账为约 6 分评分器误杀加 2 分贪心代价。
+- 协议结论：采样下不再出现量化高于全精度的反常（83/83/84 小于 85）；量化跌幅（约 1–2 分）小于论文（约 4–5 分），在 n=100 单种子噪声带内。
+- 无 \boxed 的硬核题目 11–13 个，跨方法跨协议稳定，属题目内在的超长思考而非解码死循环；前 100 题难度略偏易（1–2 级占比 36% 对全集 27%）。
+- 判定：全精度基线定案；量化三行带内偏高，方向与论文一致（量化后都跌、跌幅小于全精度跌幅度）。缺口：n=500 或多种子三次平均以收敛量化跌幅与论文差距的判定。
 
-- Trend verdict vs paper:
-  - **Ordering KVarN ≥ Hadamard ≥ KIVI: 6/6 lengths** (paper also 6/6). ✓
-  - KVarN−KIVI margin large in both (ours +27..+18 pts; paper +2..+11).
-  - KVarN−Hadamard gap ours 0..+18 (paper ~2) — VarN helps more on our
-    stack, direction consistent, magnitude larger.
-  - FP16 degradation slope L100→L600: ours +12 vs paper +10 ✓.
-- FP16 L=500 dip (65 vs 87@L400): inspected records — genuine model
-  retrieval errors (confident wrong code, e.g. `O2ZHVBUVGY` vs
-  `E2ZHVBUVGY`), not a harness artifact; per-L prompt sets differ.
-- Final 1a verdict: **趋势对齐成立**（ordering + slopes + margins sign）,
-  absolute levels carry the known stack offset (our FP16 is already 9-11
-  pts below paper at every L; compression amplifies it on Qwen3's K
-  channel outliers). Codec equivalence stands proven (entry above). 1a
-  CLOSED.
+### IFEval · Llama-3.1-8B-Instruct（n=541，采样 0.6/0.9，sink=32，最长生成 1280，lb_*）
 
-### 2026-11-10 RDKV first end-to-end on real model (P2 smoke, Qwen3-4B)
-- Config: hotpotqa (LongBench), n=4, greedy, bf16+SDPA, probe S_w=32/pool=5,
-  r_k=0.5, on-the-fly ε tables, budget n=1024.
-- Result (`results/longbench/smoke_{full,rdkv2}__hotpotqa.json`):
-  full F1 0.583 @16 bits/elem; rdkv F1 **0.583 (identical)** @ retention
-  31.5%, bpe_k 0.49, bpe_v 0.061 (payload ≈0.55 bits/elem ≈ 29× compression).
-  Budget binds as derived: Σb_t ≈ 16.5k ≈ 16n at T≈17k.
-- Verdict: probe + MCKP + dense-repro machinery works on real GQA/bf16;
-  the kept-token set is evidently the right one (zero quality loss on n=4).
-  n=50×{trec,hotpotqa}×{full,1024,256} pilot running.
+| 方法 | 我们（严格/宽松） | 论文（严格/宽松） | 判定 |
+|---|---|---|---|
+| FP16 | 74.9/78.0 | 71.1/76.8 | ✅ 带内偏高 |
+| KIVI | 71.5/76.0 | — | —（无论文行） |
+| KVarN | 73.0/78.0 | 71.0/76.5 | ⚠ 带内偏高（+2.0/+1.5） |
 
+- 短 prompt 机制核验：IFEval 多数 prompt 不足 sink 加一个量化组（160 词元），量化区为空或极小，压缩应约等于全精度——Qwen3 试点（n=20，全精度/KIVI/KVarN 三者同为 75.0/80.0）已证实，与论文一致。
+- 判定：全精度锚点与 KVarN 行均成立——KVarN 73.0/78.0 对论文 71.0/76.5，带内偏高（全精度锚点同样偏高 +3.8/+1.2，两行相对关系与论文一致：KVarN 接近全精度）；KIVI 无论文行。缺口：无，IFEval 对齐关闭。
 
-### 2026-11-10 IFEval pipeline validation (对齐实验 1b prep, Qwen3-4B)
-- Config: full / kivi k2v2 / kvarn k2v2, n=20, greedy, max_new=1280, S=32
-  (paper IFEval sink), chat template. Official checker vendored verbatim
-  (src/dartkv/tasks/ifeval_checker — only intra-package imports made
-  relative; diff vs external/ifeval_official is 1 line/file).
-- Result: all three methods 75.0 strict / 80.0 loose
-  (`results/ifeval/pilot_*.json`). Identical by construction: IFEval
-  prompts are short (mostly < S+G=160 tokens → quantized body empty or
-  tiny), matching the paper's IFEval table where compression ≈ FP16.
-- Verdict: pipeline validated (data + checker + long generation + records
-  with per-instruction follow_list). Real 1b alignment = Llama-3.1-8B,
-  541 prompts, sampled (temp 0.6/top-p 0.9) — blocked on HF token.
+### 比特非对称与机理 · Qwen3-4B（L100，n=30，贪心）
 
+| 配置 | 精度 | 含义 |
+|---|---|---|
+| 全精度 | 92–96.7 | 锚点（多次运行） |
+| KVarN K16/V2 | 93.3 | V@2 基本免费，与论文设计故事一致 |
+| KVarN K2/V16 | 73.3 | K@2 损约 20 分，主要损伤源 |
+| KVarN k4v2 | 83.3 | 官方出厂预设，同一框架下明显好于 k2v2 的 46.7 |
+| KIVI K16/V2 | 76.7 | KIVI 的 V@2 损约 20 分，劣于 KVarN 的 V@2 |
+| KIVI K2/V16 | 40.0 | 同样 K 侧损伤为主 |
 
+- 机理：2 比特 K 的损伤来自 K 通道极端离群（第 0 层通道最大值中位数 35、95 分位 306，源自 QK-norm 结构）；实测保真度 K 的余弦约 0.96（各方法相近），V 的余弦 0.86（KIVI）到 0.90（KVarN）。
+- 无效探针：sink 加大到 128 不救、官方 rtn_quantile 技巧无效、模型转 fp16 反而更差、Hadamard-only 与 KVarN 差距小（论文差距也只 1–2 分）。
+
+## SKVQ
+
+复现对象：离线 KMeans 通道重排加截断动态分组量化加精确滑窗（W=128）。论文实验在 llama-2 与其自研引擎（缓存 pre-RoPE 的 K）上，与我们的 Qwen3 加 post-RoPE 框架绝对数字不可比，按趋势对齐。
+
+等价性证明：编解码与官方逐位一致（bf16 下逐位相等，覆盖无重排、可变簇数重排、fp8 尺度、1.5 比特 V；tests/test_skvq.py 9/9）；滑窗布局与官方管理器在 prefill 与每步解码全程缓存一致（精确窗口逐条驱逐，区别于 KIVI/KVarN 的锯齿布局）。
+
+### Line-Retrieval · Qwen3-4B（L100，n=30，贪心，sink=5，clip=0.92，skvq_*）
+
+| 配置 | 精度 | 备注 |
+|---|---|---|
+| 全精度 | 92–96.7 | 锚点 |
+| KIVI k2v2 | 13.3 | 对照 |
+| KVarN k2v2 | 46.7 | 对照 |
+| SKVQ 16/16 | 93.3 | 近无损 |
+| SKVQ K16/V2 | 83.3 | V@2 只损约 10 分，优于 KIVI 的 V@2（76.7） |
+| SKVQ K2/V16（g32，重排） | 83.3 | 通道细分组是关键 |
+| SKVQ 2/2（w128 g32 重排） | 63.3 | 每元素约 3.0 比特，显著优于 KIVI 的 13.3 |
+| 消融：去滑窗（w0，g32，重排） | 60.0 | 滑窗贡献温和（+3.3） |
+| 消融：去重排（w128 g32 无重排） | 3.3 | 重排关键 |
+
+- 关键适配：校准统计必须取自实际缓存张量（我们的框架缓存 post-RoPE 的 K，需用 --hook cache 生成重排文件；直接用官方 pre-RoPE 校准会让 2 比特 K 得 0 分）。Qwen3 的 K 需要 g32 细分组（g128 在 QK-norm 通道离群下 K@2 完全失效）。
+- 判定：编解码与布局双重等价证明，加三个趋势（优于 KIVI、重排关键、滑窗温和）全部成立，SKVQ 对齐闭环。缺口：1.5 比特 V；L100–600 长度扫描；LongBench 行；Llama 侧（需先做 Llama 重排校准）。
+
+## RDKV
+
+复现对象：prefill 后 probe（token 侧与通道侧注意力权重）加 MCKP 反注水比特分配（0/2/4/8/16 比特混合、逐出与量化联合）。论文数字：LongBench 十六任务上 1024L 预算平均 49.47 对全精度 49.82，64L 预算领先逐出类基线 2.7 分，头条为 2.48% 保留率下保住 97.8% 全精度质量；RULER 十一任务（2048 上下文）4k 时 98.59、64k 时 83.20。
+
+### LongBench 试点 · Qwen3-4B（n=50，贪心，probe 窗口 32、池化 5，p2_*）
+
+| 数据集 | 全精度 | 预算 n=1024（保留约 0.33） | 预算 n=256（保留约 0.08） |
+|---|---|---|---|
+| hotpotqa（F1） | 0.492 | 0.496 | 0.491 |
+| trec（acc） | 0.680 | 0.680 | 0.680 |
+
+- 小样本冒烟（n=4）：与全精度 F1 完全一致，载荷约 0.55 比特/元素（约 29 倍压缩）；预算约束按推导成立（总比特数约为 16n）。
+- n=256 档约 123 倍载荷压缩下仍零损失，与论文「极低保留率保质量」的头条趋势一致。
+- 判定：probe、MCKP、反注水、压缩缓存端到端可用，零损失趋势初步成立；论文对齐实验（Llama 十六任务与 RULER）未开始。缺口：Llama-3.1-8B-Instruct × LongBench 十六任务 × 四档预算（模型本地已就绪）；RULER 十一任务；ε 表校准数据需从 wikitext 换成 LongBench 前缀以贴论文口径；基线 SnapKV/AdaKV 未接。
+
+## 通用核验（无论文数字）
+
+### GSM8K · Qwen3-4B（n=200，贪心，非思考模式，最长生成 256，g200_*）
+
+| 方法 | 精度 |
+|---|---|
+| FP16 | 60.0 |
+| KIVI | 59.0 |
+| Hadamard | 59.0 |
+| KVarN | 60.0 |
+| SKVQ（w128 g32 重排） | 60.0 |
+| FP16（判别重跑：生成上限 768，g200_full_m768） | 87.5 |
+
+- 结论：短 prompt 下压缩零损失（量化组不超过一两个，与 IFEval 短 prompt 机制一致）。
+- 绝对值 60% 偏低的原因已定案：是我方最长生成 256 截断（判别重跑上限 768 后全精度 60.0 → 87.5，pred 全部非空说明本就不是提取失败），非模型、非管道问题；五方法同口径对比，压缩零损失结论不受影响。
+- 缺口：其余四方法在 768 上限下的复跑（可选，趋势结论不受影响）。

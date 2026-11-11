@@ -6,8 +6,13 @@ Data: data/math500/test.jsonl — official HuggingFaceH4/MATH-500 schema
 {problem, solution, answer, subject, level, unique_id}, fetched via
 ModelScope mirror (AI-ModelScope/MATH-500); fields verified 2026-11-10.
 
-Scoring: last \\boxed{...} (balanced-brace) in the generation, light
-LaTeX normalization, exact string match against `answer`.
+Scoring: last \\boxed{...} (balanced-brace) in the generation vs `answer`
+after math normalization. Normalizer validated 2026-11-10: the original
+exact-match version under-counted by 6-9 pts/run (full 77.0 vs paper 82.6);
+every flip of the fixed version was eyeballed on the m100 matrix
+(docs/experiments.md). Rules: \\text{}/\\mathrm{} wrappers, braceless
+\\sqrt2, order-insensitive comma sets, "x=" prefixes, base subscripts
+(52_8), ^\\circ/degrees, thousands commas, dfrac/tfrac, \\left\\right.
 """
 from __future__ import annotations
 
@@ -19,8 +24,6 @@ import shutil
 
 _HERE = pathlib.Path(__file__).resolve().parent
 
-# light normalization shared by pred and gold (pilot-grade; extend if the
-# 1c alignment shows systematic format misses)
 _STRIP_PAIRS = [
     ("\\!", ""), ("\\,", ""), ("\\;", ""), ("\\ ", ""), ("$", ""),
     ("\\left", ""), ("\\right", ""),
@@ -32,7 +35,35 @@ _STRIP_PAIRS = [
 def _norm(s: str) -> str:
     for a, b in _STRIP_PAIRS:
         s = s.replace(a, b)
-    return "".join(s.split())
+    s = s.replace("\\text{", "{").replace("\\mathrm{", "{")
+    s = s.replace("^\\circ", "").replace("\\circ", "").replace("°", "")
+    s = s.replace("\\%", "").replace("\\degree", "")
+    s = re.sub(r"\\sqrt\s*(\d)", r"\\sqrt{\1}", s)   # \sqrt2 -> \sqrt{2}
+    s = re.sub(r"\\frac\s*(\d)\s*(\d)", r"\\frac{\1}{\2}", s)  # \frac12
+    s = s.replace("{,}", ",")                        # 1{,}000 -> 1,000
+    s = re.sub(r"^\s*[a-zA-Z]\s*=\s*", "", s)        # x=5 -> 5
+    s = re.sub(r"(\d),(\d{3})\b", r"\1\2", s)        # 1,000 -> 1000
+    s = s.rstrip(".").strip()
+    s = "".join(s.split())
+    while s.startswith("{") and s.endswith("}") and s.count("{") == 1:
+        s = s[1:-1]
+    while (s.startswith("(") and s.endswith(")") and s.count("(") == 1
+           and "," not in s):
+        s = s[1:-1]
+    return s
+
+
+def _answers_equal(pred: str, gold: str) -> bool:
+    p, g = _norm(pred), _norm(gold)
+    if p == g:
+        return True
+    if "," in p and "," in g:  # order-insensitive comma set: 1,-2 == -2, 1
+        if sorted(x for x in p.split(",") if x) == \
+           sorted(x for x in g.split(",") if x):
+            return True
+    if re.sub(r"_\{?\d+\}?$", "", p) == re.sub(r"_\{?\d+\}?$", "", g):
+        return True                                 # base subscript: 52_8
+    return False
 
 
 def last_boxed(text: str) -> str | None:
@@ -81,5 +112,5 @@ class MATH500Task:
     @staticmethod
     def score(sample, generated_text: str):
         pred = last_boxed(generated_text)
-        ok = pred is not None and _norm(pred) == _norm(sample["answer"])
+        ok = pred is not None and _answers_equal(pred, sample["answer"])
         return {"correct": ok, "pred": pred or ""}
