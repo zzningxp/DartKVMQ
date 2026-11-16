@@ -23,6 +23,15 @@ class KvarnMethod(GroupedOnlineMethod):
     name = "kvarn"
     online = True
 
+    # Encode the sealed chunk in sub-chunks of this many groups: VarN/rotate/
+    # quantize are all per-(head,group) independent, so sub-chunking is
+    # numerically identical while capping the fp32 transient at
+    # [B,H,1024,128] (~4 MB) instead of full prompt length. Without this,
+    # ~25k-token prefills (LongBench narrativeqa tails, line_retrieval L2000)
+    # held ~2 GB of fp32 transients on top of weights+dense body+codes and
+    # OOM'd on 32 GB (2026-11-12 postmortem).
+    ENCODE_CHUNK_GROUPS = 8
+
     def __init__(self, bits_k: int = 2, bits_v: int = 2, group_size: int = 128,
                  sink_tokens: int = 128, varn_iters: int = 8,
                  rtn_quantile: float = 0.0, **kw):
@@ -32,6 +41,20 @@ class KvarnMethod(GroupedOnlineMethod):
         self.rtn_quantile = rtn_quantile or None
 
     def encode_tiles(self, k, v, layer_idx):
+        T = k.shape[2]
+        M = T // self.G
+        step = self.ENCODE_CHUNK_GROUPS
+        if M <= step:
+            return [self._encode_chunk(k, v, layer_idx)]
+        sts = []
+        for c0 in range(0, M, step):
+            c1 = min(c0 + step, M)
+            sts.append(self._encode_chunk(
+                k[:, :, c0 * self.G:c1 * self.G],
+                v[:, :, c0 * self.G:c1 * self.G], layer_idx))
+        return sts
+
+    def _encode_chunk(self, k, v, layer_idx):
         B, Hh, T, D = k.shape                    # T = M*G
         G = self.G
         M = T // G
@@ -77,9 +100,9 @@ class KvarnMethod(GroupedOnlineMethod):
         v_params = {"scale": vs, "zero": vz, "chan_scale": vSc_chan,
                     "hadamard": Hm, "out_dtype": out_dtype, "m": M}
 
-        return [TileStorage(k_codes=kq, k_params=k_params, v_codes=vq,
-                            v_params=v_params, bits_k=self.bits_k,
-                            bits_v=self.bits_v)]
+        return TileStorage(k_codes=kq, k_params=k_params, v_codes=vq,
+                           v_params=v_params, bits_k=self.bits_k,
+                           bits_v=self.bits_v)
 
     def decode_tiles(self, sts, layer_idx):
         assert len(sts) == 1

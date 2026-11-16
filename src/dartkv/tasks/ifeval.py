@@ -56,6 +56,11 @@ class IFEvalTask:
             key=sample["meta"]["key"],
             instruction_id_list=sample["meta"]["instruction_id_list"],
             prompt=sample["prompt"], kwargs=sample["meta"]["kwargs"])
+        # reasoning models: judge the ANSWER only, not the <think> block.
+        # Truncated-before-</think> generations keep their raw text (the
+        # truncation cost should show up in the score, not be hidden).
+        if "</think>" in generated_text:
+            generated_text = generated_text.rsplit("</think>", 1)[1].lstrip()
         p2r = {ex.prompt: generated_text}
         strict = evaluation_lib.test_instruction_following_strict(ex, p2r)
         loose = evaluation_lib.test_instruction_following_loose(ex, p2r)
